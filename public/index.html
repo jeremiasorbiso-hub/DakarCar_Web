@@ -58,7 +58,7 @@
       /* ── LAYOUT ── */
       .app {
         display: grid;
-        grid-template-columns: 220px 1fr;
+        grid-template-columns: 220px minmax(0, 1fr);
         grid-template-rows: 52px 1fr;
         min-height: 100vh;
         width: 100%;
@@ -356,10 +356,12 @@
       .main {
         background: var(--bg);
         overflow-y: auto;
-        padding: 24px;
+        padding: 24px 32px;
         min-width: 0;
         min-height: calc(100vh - 52px);
         width: 100%;
+        display: flex;
+        justify-content: center;
       }
       .page {
         display: none;
@@ -367,6 +369,7 @@
         gap: 20px;
         min-width: 0;
         width: 100%;
+        max-width: 1320px;
       }
       .page.active {
         display: flex;
