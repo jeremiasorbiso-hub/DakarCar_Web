@@ -89,27 +89,28 @@
           left: -220px;
           width: 220px;
           height: calc(100vh - 52px);
-          z-index: 200;
+          z-index: 220;
           transition: left 0.3s ease;
           box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+          background: var(--surface);
         }
         .sidebar.open {
           left: 0;
         }
-        .sidebar::before {
-          content: '';
+        .mobile-overlay {
+          display: none;
           position: fixed;
-          top: 52px;
-          left: 0;
-          right: 0;
-          bottom: 0;
+          inset: 52px 0 0 0;
           background: rgba(0,0,0,0.5);
-          z-index: 150;
+          z-index: 210;
           opacity: 0;
           transition: opacity 0.3s ease;
+          pointer-events: none;
         }
-        .sidebar.open::before {
+        .mobile-overlay.active {
+          display: block;
           opacity: 1;
+          pointer-events: auto;
         }
         .topbar {
           padding: 0 16px;
@@ -183,6 +184,8 @@
         align-items: center;
         padding: 0 20px;
         gap: 16px;
+        position: relative;
+        z-index: 230;
       }
       .menu-btn:hover {
         color: var(--text);
@@ -915,6 +918,7 @@
           <i class="ti ti-check"></i> Listos p/ entregar
         </div>
       </nav>
+      <div class="mobile-overlay" id="mobile-overlay"></div>
 
       <main class="main" aria-live="polite">
         <!-- DASHBOARD -->
@@ -1372,6 +1376,17 @@
       }
 
       // ── NAVEGACIÓN ─────────────────────────────────────────────────────────────
+      function updateMobileOverlay(open) {
+        const overlay = document.getElementById('mobile-overlay');
+        if (!overlay) return;
+        overlay.classList.toggle('active', open);
+      }
+      function closeSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        sidebar.classList.remove('open');
+        updateMobileOverlay(false);
+      }
       function goPage(name) {
         currentPage = name;
         document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
@@ -1380,7 +1395,7 @@
         document.querySelector(`.nav-item[data-page="${name}"]`)?.classList.add('active');
         // Close sidebar on mobile after navigation
         if (window.innerWidth <= 768) {
-          document.querySelector('.sidebar').classList.remove('open');
+          closeSidebar();
         }
         renderPage(name);
       }
@@ -1397,18 +1412,22 @@
         updateNotifBadge();
       }
       function toggleSidebar() {
-        document.querySelector('.sidebar').classList.toggle('open');
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        sidebar.classList.toggle('open');
+        updateMobileOverlay(sidebar.classList.contains('open'));
       }
 
-      // Close sidebar when clicking on overlay
+      // Close sidebar when clicking outside it on mobile
       document.addEventListener('click', function(e) {
         const sidebar = document.querySelector('.sidebar');
         if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
           if (!sidebar.contains(e.target) && !e.target.closest('.menu-btn')) {
-            sidebar.classList.remove('open');
+            closeSidebar();
           }
         }
       });
+      document.getElementById('mobile-overlay')?.addEventListener('click', closeSidebar);
 
       // ── ESTADOS ────────────────────────────────────────────────────────────────
       const estadoConfig = {
