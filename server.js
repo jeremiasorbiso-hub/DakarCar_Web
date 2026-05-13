@@ -151,8 +151,30 @@ app.post('/api/novedades', async (req, res) => {
   res.status(201).json(nov);
 });
 
+app.get('/api/novedades', async (req, res) => {
+  const { tipo, leida } = req.query;
+  let query = supabase
+    .from('novedades')
+    .select('*, vehiculos(patente, modelo, aseguradora)')
+    .order('creado_en', { ascending: false });
+
+  if (tipo) query = query.eq('tipo', tipo);
+  if (leida === 'true' || leida === 'false') query = query.eq('leida', leida === 'true');
+
+  const { data, error } = await query;
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json(data || []);
+});
+
 app.put('/api/novedades/:id/leer', async (req, res) => {
   await supabase.from('novedades').update({ leida: true }).eq('id', req.params.id);
+  res.json({ ok: true });
+});
+
+app.put('/api/novedades/leer-todas', async (req, res) => {
+  const { error } = await supabase.from('novedades').update({ leida: true }).neq('leida', true);
+  if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true });
 });
 
