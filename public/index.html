@@ -14,6 +14,8 @@
     />
     <style>
       :root {
+        --app-max-width: 1440px;
+        --bg-out: #050505;
         --bg: #0f0f0f;
         --surface: #181818;
         --surface2: #222222;
@@ -42,13 +44,15 @@
       }
       html,
       body {
-        background: var(--bg);
+        background: var(--bg-out);
         color: var(--text);
         font-family: var(--sans);
         font-size: 14px;
         min-height: 100%;
         height: 100%;
         overflow-x: hidden;
+        display: flex;
+        justify-content: center;
       }
       a {
         color: inherit;
@@ -62,6 +66,10 @@
         grid-template-rows: 52px 1fr;
         min-height: 100vh;
         width: 100%;
+        max-width: var(--app-max-width);
+        background: var(--bg);
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+        position: relative;
       }
       .menu-btn {
         display: none;
@@ -148,6 +156,19 @@
         .stats-row {
           grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           gap: 8px;
+        }
+        .form-grid,
+        .detail-grid {
+          grid-template-columns: 1fr !important;
+        }
+        .modal {
+          width: calc(100% - 32px);
+          margin: 16px;
+        }
+        .search-wrap,
+        .search-input {
+          width: 100% !important;
+          max-width: none;
         }
         .page-header > div,
         .page-header .btn {
@@ -361,7 +382,7 @@
         min-height: calc(100vh - 52px);
         width: 100%;
         display: flex;
-        justify-content: flex-start;
+        justify-content: center;
         align-items: flex-start;
       }
       .page {
@@ -370,7 +391,7 @@
         gap: 20px;
         min-width: 0;
         width: 100%;
-        max-width: 1800px;
+        max-width: 1200px;
         margin: 0 auto;
       }
       .page.active {
