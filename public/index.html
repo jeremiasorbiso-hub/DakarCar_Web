@@ -46,6 +46,7 @@
         color: var(--text);
         font-family: var(--sans);
         font-size: 14px;
+        min-height: 100%;
         height: 100%;
         overflow-x: hidden;
       }
@@ -59,7 +60,8 @@
         display: grid;
         grid-template-columns: 220px 1fr;
         grid-template-rows: 52px 1fr;
-        height: 100vh;
+        min-height: 100vh;
+        width: 100%;
       }
       .menu-btn {
         display: none;
@@ -118,22 +120,25 @@
         }
         .topbar-brand {
           display: flex;
-          align-items: center;
-          gap: 10px;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+          width: 100%;
           min-width: 0;
         }
         .topbar-subtitle {
-          display: inline-block;
           color: var(--muted);
           font-size: 12px;
           font-family: var(--mono);
-          white-space: nowrap;
-          min-width: 0;
+          white-space: normal;
+          max-width: 100%;
+          overflow-wrap: break-word;
         }
         .topbar-right {
           margin-left: 0;
-          display: flex;
+          width: 100%;
           justify-content: flex-end;
+          display: flex;
           min-width: 0;
         }
         .main {
@@ -141,7 +146,7 @@
           min-width: 0;
         }
         .stats-row {
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           gap: 8px;
         }
         .page-header > div,
@@ -156,6 +161,18 @@
         }
         .topbar {
           flex-wrap: wrap;
+        }
+        .topbar-brand {
+          width: 100%;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .topbar-subtitle {
+          white-space: normal;
+        }
+        .topbar-right {
+          width: 100%;
+          justify-content: flex-end;
         }
         .filter-bar {
           flex-direction: column;
@@ -224,7 +241,8 @@
         gap: 16px;
         position: relative;
         z-index: 230;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        min-height: 52px;
       }
       .topbar-brand {
         display: flex;
@@ -239,6 +257,9 @@
         white-space: nowrap;
         display: inline-block;
         min-width: 0;
+        max-width: 280px;
+        text-overflow: ellipsis;
+        overflow: hidden;
       }
       .topbar-right {
         flex: 0 0 auto;
@@ -297,6 +318,7 @@
         flex-direction: column;
         gap: 2px;
         overflow-y: auto;
+        min-height: calc(100vh - 52px);
       }
       .nav-item {
         display: flex;
@@ -334,6 +356,7 @@
         overflow-y: auto;
         padding: 24px;
         min-width: 0;
+        min-height: calc(100vh - 52px);
       }
       .page {
         display: none;
