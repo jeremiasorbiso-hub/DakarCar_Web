@@ -47,7 +47,7 @@
         font-family: var(--sans);
         font-size: 14px;
         height: 100%;
-        overflow: hidden;
+        overflow-x: hidden;
       }
       a {
         color: inherit;
@@ -61,6 +61,17 @@
         grid-template-rows: 52px 1fr;
         height: 100vh;
       }
+      .menu-btn {
+        display: none;
+        background: none;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        margin-right: 8px;
+        transition: all 0.15s;
+      }
 
       @media (max-width: 768px) {
         .menu-btn {
@@ -70,13 +81,15 @@
         }
         .app {
           grid-template-columns: 1fr;
+          grid-template-rows: 52px 1fr;
         }
         .sidebar {
           position: fixed;
           top: 52px;
           left: -220px;
+          width: 220px;
           height: calc(100vh - 52px);
-          z-index: 100;
+          z-index: 200;
           transition: left 0.3s ease;
           box-shadow: 2px 0 8px rgba(0,0,0,0.3);
         }
@@ -91,7 +104,7 @@
           right: 0;
           bottom: 0;
           background: rgba(0,0,0,0.5);
-          z-index: -1;
+          z-index: 150;
           opacity: 0;
           transition: opacity 0.3s ease;
         }
@@ -100,6 +113,7 @@
         }
         .topbar {
           padding: 0 16px;
+          justify-content: space-between;
         }
         .main {
           padding: 16px;
@@ -116,6 +130,50 @@
           align-items: flex-start;
           gap: 8px;
         }
+        .topbar {
+          flex-wrap: wrap;
+        }
+        .topbar span {
+          width: 100%;
+        }
+        .topbar-right {
+          margin-left: 0;
+          width: 100%;
+          display: flex;
+          justify-content: flex-end;
+        }
+        .filter-bar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .search-wrap,
+        .select-filter {
+          width: 100%;
+        }
+        .search-input {
+          width: 100%;
+        }
+        .table-wrap {
+          width: 100%;
+        }
+        .page {
+          gap: 16px;
+        }
+      }
+      @media (max-width: 540px) {
+        .stats-row {
+          grid-template-columns: 1fr;
+        }
+        .page-title {
+          font-size: 16px;
+        }
+        .page-sub {
+          font-size: 11px;
+        }
+        .btn {
+          width: 100%;
+          justify-content: center;
+        }
       }
       .topbar {
         grid-column: 1/-1;
@@ -125,17 +183,6 @@
         align-items: center;
         padding: 0 20px;
         gap: 16px;
-      }
-      .menu-btn {
-        display: none;
-        background: none;
-        border: none;
-        color: var(--muted);
-        cursor: pointer;
-        padding: 6px;
-        border-radius: 6px;
-        margin-right: 8px;
-        transition: all 0.15s;
       }
       .menu-btn:hover {
         color: var(--text);
