@@ -49,6 +49,7 @@
         font-family: var(--sans);
         font-size: 14px;
         height: 100vh;
+        overflow: hidden; /* CORRECCIÓN: Evita el doble scroll en móviles */
       }
       a {
         color: inherit;
@@ -159,8 +160,10 @@
         .detail-grid {
           grid-template-columns: 1fr !important;
         }
+        /* CORRECCIÓN: Ajuste de modales en móvil */
         .modal {
           width: calc(100% - 32px);
+          max-height: calc(100vh - 32px);
           margin: 16px;
         }
         .search-wrap,
@@ -290,8 +293,8 @@
       .logo {
         font-family: var(--mono);
         font-size: 13px;
-        color: var(--red); /* Cambiado al rojo de tu paleta */
-        font-weight: bold; /* Esto es lo que lo pone en negrita */
+        color: var(--red);
+        font-weight: bold;
         letter-spacing: 0.05em;
         flex: 0 0 auto;
         white-space: nowrap;
@@ -500,12 +503,16 @@
         align-items: center;
         gap: 8px;
       }
+      
+      /* CORRECCIÓN: Tablas horizontales scrolleables y no aplastadas */
       .table-wrap {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
       }
       table {
         width: 100%;
         border-collapse: collapse;
+        min-width: 800px; /* Evita que las columnas colapsen en celular */
       }
       th {
         font-size: 11px;
@@ -798,7 +805,7 @@
         white-space: nowrap;
       }
 
-      /* ── MODAL ── */
+      /* ── MODAL (CORRECCIÓN: Flexbox interno para que no se oculten los botones) ── */
       .overlay {
         display: none;
         position: fixed;
@@ -820,7 +827,8 @@
         width: 700px;
         max-width: 100%;
         max-height: 90vh;
-        overflow-y: auto;
+        display: flex;
+        flex-direction: column; /* Permite dividir cabecera, cuerpo y pie */
         margin: auto;
       }
       .modal-sm {
@@ -832,10 +840,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        position: sticky;
-        top: 0;
-        background: var(--surface);
-        z-index: 1;
+        flex-shrink: 0; /* Impide que la cabecera se encoja */
       }
       .modal-title {
         font-size: 15px;
@@ -846,6 +851,8 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
+        flex: 1; /* Ocupa el espacio disponible */
+        overflow-y: auto; /* Scroll interno solo para el formulario */
       }
       .modal-foot {
         padding: 14px 24px;
@@ -853,10 +860,9 @@
         display: flex;
         justify-content: flex-end;
         gap: 8px;
-        position: sticky;
-        bottom: 0;
-        background: var(--surface);
+        flex-shrink: 0; /* Impide que el pie de los botones se oculte */
       }
+      
       .form-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -1820,7 +1826,7 @@
         detVehId = id;
         const v = await api(`/api/vehiculos/${id}`).catch(() => null);
         if (!v) return;
-        document.getElementById('det-title').textContent = `${v.modelo}  ·  ${v.patente}`;
+        document.getElementById('det-title').textContent = `${v.modelo}  ·  ${v.patente}`;
         document.getElementById('det-body').innerHTML = `
     <div class="detail-grid">
       <div class="detail-field"><div class="detail-field-label">PATENTE</div><div class="detail-field-val mono">${v.patente}</div></div>
