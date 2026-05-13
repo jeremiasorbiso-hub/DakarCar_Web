@@ -1,0 +1,1881 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Taller Gestión</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      :root {
+        --bg: #0f0f0f;
+        --surface: #181818;
+        --surface2: #222222;
+        --border: rgba(255, 255, 255, 0.08);
+        --border2: rgba(255, 255, 255, 0.14);
+        --text: #f0f0f0;
+        --muted: #888;
+        --accent: #e8c547;
+        --accent-dim: rgba(232, 197, 71, 0.12);
+        --red: #e24b4a;
+        --red-dim: rgba(226, 75, 74, 0.12);
+        --green: #4caf7d;
+        --green-dim: rgba(76, 175, 125, 0.1);
+        --blue: #4a9ee8;
+        --blue-dim: rgba(74, 158, 232, 0.1);
+        --orange: #e8904a;
+        --orange-dim: rgba(232, 144, 74, 0.1);
+        --mono: 'Roboto Mono', 'Courier New', monospace;
+        --sans: 'Roboto', sans-serif;
+        --r: 8px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 14px;
+        height: 100%;
+        overflow: hidden;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      /* ── LAYOUT ── */
+      .app {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        grid-template-rows: 52px 1fr;
+        height: 100vh;
+      }
+
+      @media (max-width: 768px) {
+        .menu-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          position: fixed;
+          top: 52px;
+          left: -220px;
+          height: calc(100vh - 52px);
+          z-index: 100;
+          transition: left 0.3s ease;
+          box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+        }
+        .sidebar.open {
+          left: 0;
+        }
+        .sidebar::before {
+          content: '';
+          position: fixed;
+          top: 52px;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.5);
+          z-index: -1;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+        .sidebar.open::before {
+          opacity: 1;
+        }
+        .topbar {
+          padding: 0 16px;
+        }
+        .main {
+          padding: 16px;
+        }
+        .stats-row {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+        .stat-card {
+          padding: 12px;
+        }
+        .page-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+      }
+      .topbar {
+        grid-column: 1/-1;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+      }
+      .menu-btn {
+        display: none;
+        background: none;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        margin-right: 8px;
+        transition: all 0.15s;
+      }
+      .menu-btn:hover {
+        color: var(--text);
+        background: var(--surface2);
+      }
+      .logo {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--red); /* Cambiado al rojo de tu paleta */
+        font-weight: bold; /* Esto es lo que lo pone en negrita */
+        letter-spacing: 0.05em;
+      }
+      .topbar-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .notif-btn {
+        position: relative;
+        background: none;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        transition: all 0.15s;
+      }
+      .notif-btn:hover {
+        color: var(--text);
+        background: var(--surface2);
+      }
+      .notif-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 8px;
+        height: 8px;
+        background: var(--red);
+        border-radius: 50%;
+        border: 2px solid var(--surface);
+        display: none;
+      }
+      .sidebar {
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 16px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        overflow-y: auto;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 16px;
+        font-size: 13px;
+        color: var(--muted);
+        cursor: pointer;
+        border-left: 2px solid transparent;
+        transition: all 0.15s;
+      }
+      .nav-item:hover {
+        color: var(--text);
+        background: var(--surface2);
+      }
+      .nav-item.active {
+        color: var(--accent);
+        border-left-color: var(--accent);
+        background: var(--accent-dim);
+      }
+      .nav-item i {
+        font-size: 16px;
+      }
+      .nav-section {
+        font-size: 10px;
+        font-family: var(--mono);
+        color: var(--muted);
+        padding: 12px 16px 4px;
+        letter-spacing: 0.1em;
+        opacity: 0.5;
+      }
+      .main {
+        background: var(--bg);
+        overflow-y: auto;
+        padding: 24px;
+      }
+      .page {
+        display: none;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .page.active {
+        display: flex;
+      }
+
+      /* ── COMPONENTES ── */
+      .page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .page-title {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .page-sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 3px;
+        font-family: var(--mono);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 16px;
+        border-radius: var(--r);
+        font-size: 13px;
+        font-family: var(--sans);
+        cursor: pointer;
+        border: none;
+        font-weight: 500;
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #0f0f0f;
+      }
+      .btn-primary:hover {
+        background: #f0cd50;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border2);
+      }
+      .btn-ghost:hover {
+        color: var(--text);
+        background: var(--surface2);
+      }
+      .btn-green {
+        background: var(--green-dim);
+        color: var(--green);
+        border: 1px solid rgba(76, 175, 125, 0.25);
+      }
+      .btn-green:hover {
+        background: rgba(76, 175, 125, 0.18);
+      }
+      .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        padding: 16px;
+      }
+      .stat-label {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--muted);
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .stat-val {
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+      }
+      .card-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .card-title {
+        font-size: 13px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--muted);
+        padding: 10px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+      }
+      td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .mono {
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      .pill-yellow {
+        background: var(--accent-dim);
+        color: var(--accent);
+      }
+      .pill-blue {
+        background: var(--blue-dim);
+        color: var(--blue);
+      }
+      .pill-orange {
+        background: var(--orange-dim);
+        color: var(--orange);
+      }
+      .pill-green {
+        background: var(--green-dim);
+        color: var(--green);
+      }
+      .pill-red {
+        background: var(--red-dim);
+        color: var(--red);
+      }
+      .pill-gray {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--muted);
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+      }
+      .actions {
+        display: flex;
+        gap: 6px;
+      }
+      .icon-btn {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 15px;
+        transition: all 0.15s;
+      }
+      .icon-btn:hover {
+        border-color: var(--border2);
+        color: var(--text);
+        background: var(--surface2);
+      }
+      .icon-btn.danger:hover {
+        color: var(--red);
+        border-color: rgba(226, 75, 74, 0.4);
+        background: var(--red-dim);
+      }
+      .tag-urgente {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        padding: 2px 7px;
+        border-radius: 4px;
+        background: var(--red-dim);
+        color: var(--red);
+        font-weight: 500;
+        margin-left: 6px;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--muted);
+      }
+      .empty-state i {
+        font-size: 36px;
+        opacity: 0.4;
+        display: block;
+        margin-bottom: 10px;
+      }
+      .search-wrap {
+        position: relative;
+      }
+      .search-wrap i {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-size: 16px;
+        pointer-events: none;
+      }
+      .search-input {
+        background: var(--surface);
+        border: 1px solid var(--border2);
+        border-radius: var(--r);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 13px;
+        padding: 8px 12px 8px 36px;
+        width: 260px;
+      }
+      .search-input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .select-filter {
+        background: var(--surface);
+        border: 1px solid var(--border2);
+        border-radius: var(--r);
+        color: var(--text);
+        font-size: 13px;
+        padding: 8px 12px;
+        font-family: var(--sans);
+      }
+      .select-filter:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .filter-bar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .filter-btn {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        border: 1px solid var(--border);
+        background: none;
+        color: var(--muted);
+        cursor: pointer;
+        font-family: var(--sans);
+        transition: all 0.15s;
+      }
+      .filter-btn.active {
+        background: var(--accent-dim);
+        color: var(--accent);
+        border-color: rgba(232, 197, 71, 0.3);
+      }
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: var(--surface);
+        border: 1px solid var(--border2);
+        border-radius: var(--r);
+        padding: 12px 18px;
+        font-size: 13px;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transform: translateY(80px);
+        opacity: 0;
+        transition: all 0.3s;
+      }
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .toast.success {
+        border-left: 3px solid var(--green);
+      }
+      .toast.error {
+        border-left: 3px solid var(--red);
+      }
+
+      /* ── NOVEDADES ── */
+      .novedades-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .novedad-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        padding: 14px 16px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 14px;
+        align-items: start;
+        transition: opacity 0.3s;
+      }
+      .novedad-card.leida {
+        opacity: 0.45;
+      }
+      .novedad-card.alerta {
+        border-left: 3px solid var(--red);
+      }
+      .novedad-card.seguimiento {
+        border-left: 3px solid var(--orange);
+      }
+      .novedad-card.info {
+        border-left: 3px solid var(--blue);
+      }
+      .novedad-card.ok {
+        border-left: 3px solid var(--green);
+      }
+      .nov-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+      .nov-icon.alerta {
+        background: var(--red-dim);
+        color: var(--red);
+      }
+      .nov-icon.seguimiento {
+        background: var(--orange-dim);
+        color: var(--orange);
+      }
+      .nov-icon.info {
+        background: var(--blue-dim);
+        color: var(--blue);
+      }
+      .nov-icon.ok {
+        background: var(--green-dim);
+        color: var(--green);
+      }
+      .nov-title {
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 3px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .nov-unread {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        display: inline-block;
+      }
+      .nov-detail {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .nov-time {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      /* ── MODAL ── */
+      .overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        z-index: 200;
+        align-items: center;
+        justify-content: center;
+        overflow-y: auto;
+        padding: 20px;
+      }
+      .overlay.open {
+        display: flex;
+      }
+      .modal {
+        background: var(--surface);
+        border: 1px solid var(--border2);
+        border-radius: 12px;
+        width: 700px;
+        max-width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        margin: auto;
+      }
+      .modal-sm {
+        width: 500px;
+      }
+      .modal-head {
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+        z-index: 1;
+      }
+      .modal-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .modal-body {
+        padding: 20px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .modal-foot {
+        padding: 14px 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        position: sticky;
+        bottom: 0;
+        background: var(--surface);
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .fg {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .fg.full {
+        grid-column: 1/-1;
+      }
+      .fg label {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--muted);
+        letter-spacing: 0.05em;
+      }
+      .fg input,
+      .fg select,
+      .fg textarea {
+        background: var(--bg);
+        border: 1px solid var(--border2);
+        border-radius: 6px;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 13px;
+        padding: 8px 12px;
+        width: 100%;
+        transition: border-color 0.15s;
+      }
+      .fg select option {
+        background: #1a1a1a;
+      }
+      .fg input:focus,
+      .fg select:focus,
+      .fg textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .fg textarea {
+        resize: vertical;
+        min-height: 70px;
+      }
+      .section-divider {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--accent);
+        letter-spacing: 0.08em;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 6px;
+        margin-top: 4px;
+      }
+
+      /* ── DETALLE ── */
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      .detail-field {
+        background: var(--surface2);
+        border-radius: 6px;
+        padding: 10px 14px;
+      }
+      .detail-field.full {
+        grid-column: 1/-1;
+      }
+      .detail-field-label {
+        font-size: 10px;
+        font-family: var(--mono);
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        margin-bottom: 4px;
+      }
+      .detail-field-val {
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+      .timeline {
+        display: flex;
+        flex-direction: column;
+      }
+      .tl-item {
+        display: grid;
+        grid-template-columns: 24px 1fr;
+        gap: 12px;
+        padding-bottom: 16px;
+      }
+      .tl-item:last-child {
+        padding-bottom: 0;
+      }
+      .tl-dot-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .tl-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 3px;
+      }
+      .tl-line {
+        flex: 1;
+        width: 1px;
+        background: var(--border);
+        margin-top: 4px;
+        min-height: 16px;
+      }
+      .tl-text {
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .tl-time {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .loading {
+        text-align: center;
+        padding: 30px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="topbar">
+        <button class="menu-btn" onclick="toggleSidebar()" aria-label="Menú"><i class="ti ti-menu-2"></i></button>
+        <div class="logo">DakarCar Design</div>
+        <span style="font-size: 12px; color: var(--muted); font-family: var(--mono)"
+          >Chapería &amp; Pintura</span
+        >
+        <div class="topbar-right">
+          <button
+            class="notif-btn"
+            onclick="goPage('novedades')"
+            title="Novedades"
+            aria-label="Ver novedades"
+          >
+            <i class="ti ti-bell" style="font-size: 18px"></i>
+            <span class="notif-badge" id="notif-badge"></span>
+          </button>
+        </div>
+      </div>
+
+      <nav class="sidebar" aria-label="Navegación principal">
+        <div class="nav-section">PANEL</div>
+        <div class="nav-item active" data-page="dashboard" onclick="goPage('dashboard')">
+          <i class="ti ti-layout-dashboard"></i> Dashboard
+        </div>
+        <div class="nav-item" data-page="novedades" onclick="goPage('novedades')">
+          <i class="ti ti-bell"></i> Novedades
+        </div>
+        <div class="nav-section">GESTIÓN</div>
+        <div class="nav-item" data-page="vehiculos" onclick="goPage('vehiculos')">
+          <i class="ti ti-car"></i> Vehículos
+        </div>
+        <div class="nav-item" data-page="clientes" onclick="goPage('clientes')">
+          <i class="ti ti-users"></i> Clientes
+        </div>
+        <div class="nav-section">FLUJO</div>
+        <div class="nav-item" data-page="seguimiento" onclick="goPage('seguimiento')">
+          <i class="ti ti-phone-call"></i> Seguimiento seguro
+        </div>
+        <div class="nav-item" data-page="entrega" onclick="goPage('entrega')">
+          <i class="ti ti-check"></i> Listos p/ entregar
+        </div>
+      </nav>
+
+      <main class="main" aria-live="polite">
+        <!-- DASHBOARD -->
+        <div class="page active" id="page-dashboard">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Dashboard</div>
+              <div class="page-sub">Resumen general del taller</div>
+            </div>
+            <button class="btn btn-ghost" onclick="refreshAll()">
+              <i class="ti ti-refresh"></i> Actualizar
+            </button>
+          </div>
+          <div class="stats-row" id="dash-stats"><div class="loading">Cargando...</div></div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="ti ti-alert-triangle" style="color: var(--red)"></i> Alertas y
+                recordatorios
+              </div>
+            </div>
+            <div id="dash-alerts"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-car"></i> Últimos vehículos</div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>PATENTE</th>
+                    <th>VEHÍCULO</th>
+                    <th>CLIENTE</th>
+                    <th>ESTADO</th>
+                    <th>DÍAS</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-recent"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOVEDADES -->
+        <div class="page" id="page-novedades">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Novedades</div>
+              <div class="page-sub">Alertas, seguimientos y recordatorios</div>
+            </div>
+            <button class="btn btn-ghost" onclick="marcarTodoLeido()">
+              <i class="ti ti-checks"></i> Marcar todo leído
+            </button>
+          </div>
+          <div class="filter-bar" id="nov-filters">
+            <button class="filter-btn active" data-f="todos" onclick="filterNov('todos', this)">
+              Todos
+            </button>
+            <button class="filter-btn" data-f="alerta" onclick="filterNov('alerta', this)">
+              Urgentes
+            </button>
+            <button
+              class="filter-btn"
+              data-f="seguimiento"
+              onclick="filterNov('seguimiento', this)"
+            >
+              Seguimiento
+            </button>
+            <button class="filter-btn" data-f="info" onclick="filterNov('info', this)">Info</button>
+            <button class="filter-btn" data-f="ok" onclick="filterNov('ok', this)">
+              Resueltos
+            </button>
+          </div>
+          <div class="novedades-list" id="nov-list"><div class="loading">Cargando...</div></div>
+        </div>
+
+        <!-- VEHÍCULOS -->
+        <div class="page" id="page-vehiculos">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Vehículos</div>
+              <div class="page-sub">Registro completo de unidades</div>
+            </div>
+            <button class="btn btn-primary" onclick="openModalVeh()">
+              <i class="ti ti-plus"></i> Nuevo vehículo
+            </button>
+          </div>
+          <div class="filter-bar">
+            <div class="search-wrap">
+              <i class="ti ti-search"></i
+              ><input
+                class="search-input"
+                placeholder="Buscar patente, modelo, cliente..."
+                id="veh-search"
+                oninput="debounceVeh()"
+              />
+            </div>
+            <select class="select-filter" id="veh-filter-estado" onchange="renderVehiculos()">
+              <option value="">Todos los estados</option>
+              <option value="ingresado">Ingresado</option>
+              <option value="en_proceso">En proceso</option>
+              <option value="esperando_seguro">Esperando seguro</option>
+              <option value="aprobado">Aprobado por seguro</option>
+              <option value="listo">Listo para entregar</option>
+              <option value="entregado">Entregado</option>
+            </select>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>PATENTE</th>
+                    <th>VEHÍCULO</th>
+                    <th>CLIENTE</th>
+                    <th>ASEGURADORA</th>
+                    <th>ESTADO</th>
+                    <th>DÍAS</th>
+                    <th>ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody id="veh-tbody">
+                  <tr>
+                    <td colspan="7" class="loading">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- CLIENTES -->
+        <div class="page" id="page-clientes">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Clientes</div>
+              <div class="page-sub">Base de clientes del taller</div>
+            </div>
+            <button class="btn btn-primary" onclick="openModalCliente()">
+              <i class="ti ti-plus"></i> Nuevo cliente
+            </button>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>NOMBRE</th>
+                    <th>DNI / CUIT</th>
+                    <th>TELÉFONO</th>
+                    <th>EMAIL</th>
+                    <th>VEHÍCULOS</th>
+                    <th>ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody id="cli-tbody">
+                  <tr>
+                    <td colspan="6" class="loading">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEGUIMIENTO -->
+        <div class="page" id="page-seguimiento">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Seguimiento aseguradora</div>
+              <div class="page-sub">Casos pendientes de respuesta</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>VEHÍCULO</th>
+                    <th>CLIENTE</th>
+                    <th>ASEGURADORA</th>
+                    <th>NRO. SINIESTRO</th>
+                    <th>DÍAS</th>
+                    <th>ESTADO</th>
+                    <th>ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody id="seg-tbody">
+                  <tr>
+                    <td colspan="7" class="loading">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ENTREGA -->
+        <div class="page" id="page-entrega">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Listos para entregar</div>
+              <div class="page-sub">Vehículos terminados — coordinar con el cliente</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>VEHÍCULO</th>
+                    <th>CLIENTE</th>
+                    <th>TELÉFONO</th>
+                    <th>DÍAS LISTO</th>
+                    <th>EN TALLER</th>
+                    <th>ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody id="ent-tbody">
+                  <tr>
+                    <td colspan="6" class="loading">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ═══════════════════ MODALES ═══════════════════ -->
+
+    <!-- MODAL VEHÍCULO -->
+    <div class="overlay" id="modal-veh" onclick="overlayClose(event, 'modal-veh')">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title" id="modal-veh-title">Registrar vehículo</div>
+          <button class="icon-btn" onclick="closeModal('modal-veh')">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="section-divider">DATOS DEL VEHÍCULO</div>
+          <div class="form-grid">
+            <div class="fg">
+              <label>PATENTE *</label
+              ><input id="vf-patente" placeholder="ABC 123" style="text-transform: uppercase" />
+            </div>
+            <div class="fg">
+              <label>MARCA Y MODELO *</label
+              ><input id="vf-modelo" placeholder="Toyota Corolla 2022" />
+            </div>
+            <div class="fg">
+              <label>NRO. MOTOR</label><input id="vf-motor" placeholder="1NZ-1234567" />
+            </div>
+            <div class="fg">
+              <label>NRO. CHASIS / VIN</label
+              ><input id="vf-chasis" placeholder="9BWZZZ377VT004251" />
+            </div>
+            <div class="fg">
+              <label>AÑO</label
+              ><input id="vf-anio" type="number" placeholder="2022" min="1990" max="2030" />
+            </div>
+            <div class="fg">
+              <label>COLOR</label><input id="vf-color" placeholder="Blanco perla" />
+            </div>
+            <div class="fg">
+              <label>KM. AL INGRESO</label><input id="vf-km" type="number" placeholder="45000" />
+            </div>
+            <div class="fg">
+              <label>CLIENTE</label>
+              <select id="vf-cliente">
+                <option value="">— Sin asignar —</option>
+              </select>
+            </div>
+          </div>
+          <div class="section-divider">DATOS DEL SINIESTRO</div>
+          <div class="form-grid">
+            <div class="fg">
+              <label>ASEGURADORA</label
+              ><input id="vf-aseguradora" placeholder="Federación Patronal" />
+            </div>
+            <div class="fg">
+              <label>NRO. SINIESTRO / PÓLIZA</label
+              ><input id="vf-siniestro" placeholder="SIN-2024-00123" />
+            </div>
+            <div class="fg">
+              <label>ESTADO</label>
+              <select id="vf-estado">
+                <option value="ingresado">Ingresado</option>
+                <option value="en_proceso">En proceso</option>
+                <option value="esperando_seguro">Esperando seguro</option>
+                <option value="aprobado">Aprobado por seguro</option>
+                <option value="listo">Listo para entregar</option>
+                <option value="entregado">Entregado</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>¿AUTO EN TALLER?</label>
+              <select id="vf-en-taller">
+                <option value="si">Sí, está en el taller</option>
+                <option value="no">No — lo trae al terminar gestión</option>
+              </select>
+            </div>
+            <div class="fg full">
+              <label>TRABAJO A REALIZAR</label
+              ><textarea
+                id="vf-trabajo"
+                placeholder="Reparación paragolpes delantero, pintura lateral, cambio de faros..."
+              ></textarea>
+            </div>
+            <div class="fg full">
+              <label>OBSERVACIONES</label
+              ><textarea id="vf-obs" placeholder="Notas internas..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-veh')">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveVehiculo()">
+            <i class="ti ti-device-floppy"></i> Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL CLIENTE -->
+    <div class="overlay" id="modal-cli" onclick="overlayClose(event, 'modal-cli')">
+      <div class="modal modal-sm">
+        <div class="modal-head">
+          <div class="modal-title" id="modal-cli-title">Registrar cliente</div>
+          <button class="icon-btn" onclick="closeModal('modal-cli')">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="fg">
+              <label>NOMBRE COMPLETO *</label><input id="cf-nombre" placeholder="Juan Pérez" />
+            </div>
+            <div class="fg">
+              <label>DNI / CUIT</label><input id="cf-dni" placeholder="20-12345678-9" />
+            </div>
+            <div class="fg">
+              <label>TELÉFONO *</label
+              ><input id="cf-tel" placeholder="+54 341 555-1234" type="tel" />
+            </div>
+            <div class="fg">
+              <label>EMAIL</label><input id="cf-email" placeholder="juan@email.com" type="email" />
+            </div>
+            <div class="fg full">
+              <label>DIRECCIÓN</label><input id="cf-dir" placeholder="Av. Córdoba 1234, Rosario" />
+            </div>
+            <div class="fg full">
+              <label>OBSERVACIONES</label
+              ><textarea
+                id="cf-obs"
+                placeholder="Cliente frecuente, flota de empresa..."
+                style="min-height: 55px"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-cli')">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveCliente()">
+            <i class="ti ti-device-floppy"></i> Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DETALLE VEHÍCULO -->
+    <div class="overlay" id="modal-detalle" onclick="overlayClose(event, 'modal-detalle')">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title" id="det-title">Detalle del vehículo</div>
+          <button class="icon-btn" onclick="closeModal('modal-detalle')">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body" id="det-body"></div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-detalle')">Cerrar</button>
+          <button class="btn btn-primary" id="det-nov-btn">
+            <i class="ti ti-plus"></i> Agregar novedad
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL NOVEDAD -->
+    <div class="overlay" id="modal-nov" onclick="overlayClose(event, 'modal-nov')">
+      <div class="modal modal-sm">
+        <div class="modal-head">
+          <div class="modal-title">Registrar novedad</div>
+          <button class="icon-btn" onclick="closeModal('modal-nov')">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="fg">
+            <label>TIPO</label>
+            <select id="nf-tipo">
+              <option value="info">Información general</option>
+              <option value="seguimiento">Seguimiento aseguradora</option>
+              <option value="alerta">Alerta / urgente</option>
+              <option value="ok">Resuelto</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>DESCRIPCIÓN *</label>
+            <textarea
+              id="nf-desc"
+              style="min-height: 100px"
+              placeholder="Ej: Llamamos a Federación Patronal, no tienen denuncia registrada. Reintentamos en 2 días hábiles.&#10;&#10;Si seleccionás 'Seguimiento aseguradora', el sistema crea un recordatorio automático en 2 días hábiles."
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-nov')">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveNovedad()">
+            <i class="ti ti-device-floppy"></i> Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+    <script>
+      const API = '';
+      let currentPage = 'dashboard';
+      let currentNovFilter = 'todos';
+      let detVehId = null;
+      let editCliId = null;
+      let editVehId = null;
+      let vehDebounceTimer = null;
+
+      // ── FETCH HELPERS ──────────────────────────────────────────────────────────
+      async function api(path, opts = {}) {
+        const res = await fetch(API + path, {
+          headers: { 'Content-Type': 'application/json' },
+          ...opts,
+          body: opts.body ? JSON.stringify(opts.body) : undefined,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
+          throw new Error(err.error || 'Error en el servidor');
+        }
+        return res.json();
+      }
+
+      // ── NAVEGACIÓN ─────────────────────────────────────────────────────────────
+      function goPage(name) {
+        currentPage = name;
+        document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach((n) => n.classList.remove('active'));
+        document.getElementById('page-' + name).classList.add('active');
+        document.querySelector(`.nav-item[data-page="${name}"]`)?.classList.add('active');
+        // Close sidebar on mobile after navigation
+        if (window.innerWidth <= 768) {
+          document.querySelector('.sidebar').classList.remove('open');
+        }
+        renderPage(name);
+      }
+      function renderPage(name) {
+        if (name === 'dashboard') renderDashboard();
+        else if (name === 'novedades') renderNovedades();
+        else if (name === 'vehiculos') renderVehiculos();
+        else if (name === 'clientes') renderClientes();
+        else if (name === 'seguimiento') renderSeguimiento();
+        else if (name === 'entrega') renderEntrega();
+      }
+      function refreshAll() {
+        renderPage(currentPage);
+        updateNotifBadge();
+      }
+      function toggleSidebar() {
+        document.querySelector('.sidebar').classList.toggle('open');
+      }
+
+      // Close sidebar when clicking on overlay
+      document.addEventListener('click', function(e) {
+        const sidebar = document.querySelector('.sidebar');
+        if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+          if (!sidebar.contains(e.target) && !e.target.closest('.menu-btn')) {
+            sidebar.classList.remove('open');
+          }
+        }
+      });
+
+      // ── ESTADOS ────────────────────────────────────────────────────────────────
+      const estadoConfig = {
+        ingresado: { label: 'Ingresado', cls: 'pill-gray', icon: 'ti-file' },
+        en_proceso: { label: 'En proceso', cls: 'pill-blue', icon: 'ti-tool' },
+        esperando_seguro: { label: 'Esperando seguro', cls: 'pill-yellow', icon: 'ti-phone-call' },
+        aprobado: { label: 'Aprobado por seguro', cls: 'pill-orange', icon: 'ti-circle-check' },
+        listo: { label: 'Listo para entregar', cls: 'pill-green', icon: 'ti-check' },
+        entregado: { label: 'Entregado', cls: 'pill-gray', icon: 'ti-logout' },
+      };
+      function estadoPill(e) {
+        const c = estadoConfig[e] || estadoConfig.ingresado;
+        return `<span class="pill ${c.cls}"><i class="ti ${c.icon}"></i> ${c.label}</span>`;
+      }
+      function diasColor(d) {
+        return d >= 15 ? 'var(--red)' : d >= 7 ? 'var(--orange)' : 'var(--text)';
+      }
+      function fmtFecha(dt) {
+        if (!dt) return '—';
+        const d = new Date(dt);
+        return (
+          d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+          ' ' +
+          d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+        );
+      }
+
+      // ── DASHBOARD ──────────────────────────────────────────────────────────────
+      async function renderDashboard() {
+        try {
+          const data = await api('/api/dashboard');
+          const { stats, alertas, recientes } = data;
+
+          document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-car"></i> EN TALLER</div><div class="stat-val">${stats.en_taller}</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-phone-call"></i> ESPERANDO SEGURO</div><div class="stat-val" style="color:var(--accent)">${stats.esperando_seguro}</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-check"></i> LISTOS PARA ENTREGAR</div><div class="stat-val" style="color:var(--green)">${stats.listos}</div></div>
+      <div class="stat-card"><div class="stat-label"><i class="ti ti-alert-triangle"></i> ALERTAS ACTIVAS</div><div class="stat-val" style="color:var(--red)">${stats.alertas}</div></div>
+    `;
+
+          document.getElementById('dash-alerts').innerHTML =
+            alertas.length === 0
+              ? '<div class="empty-state"><i class="ti ti-circle-check"></i><div>Sin alertas activas</div></div>'
+              : alertas
+                  .map(
+                    (a) => `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)">
+            <div class="dot" style="background:${a.tipo === 'alerta' ? 'var(--red)' : 'var(--orange)'}"></div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500">${a.titulo}</div>
+              <div style="font-size:12px;color:var(--muted)">${a.descripcion}</div>
+            </div>
+            <span style="font-size:11px;font-family:var(--mono);color:var(--muted);white-space:nowrap">${fmtFecha(a.creado_en)}</span>
+            ${a.vehiculo_id ? `<button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" onclick="openDetalle(${a.vehiculo_id})">Ver</button>` : ''}
+            <button class="icon-btn" title="Marcar leída" onclick="marcarLeida(${a.id})"><i class="ti ti-check"></i></button>
+          </div>`
+                  )
+                  .join('');
+
+          document.getElementById('dash-recent').innerHTML =
+            recientes
+              .map(
+                (v) => `
+      <tr>
+        <td class="mono">${v.patente}${v.dias >= 15 ? '<span class="tag-urgente"><i class="ti ti-alert-triangle" style="font-size:10px"></i> urgente</span>' : ''}</td>
+        <td>${v.modelo}</td>
+        <td>${v.cliente_nombre || '—'}</td>
+        <td>${estadoPill(v.estado)}</td>
+        <td style="color:${diasColor(v.dias)};font-weight:500;font-family:var(--mono)">${v.dias}d</td>
+      </tr>`
+              )
+              .join('') ||
+            '<tr><td colspan="5" class="empty-state">Sin vehículos registrados</td></tr>';
+
+          updateNotifBadge(stats.no_leidas);
+        } catch (e) {
+          showToast(e.message, 'error');
+        }
+      }
+
+      // ── NOVEDADES ──────────────────────────────────────────────────────────────
+      const novIconMap = {
+        alerta: 'ti-alert-triangle',
+        seguimiento: 'ti-phone-call',
+        info: 'ti-info-circle',
+        ok: 'ti-check',
+      };
+
+      async function renderNovedades() {
+        const url =
+          currentNovFilter === 'todos'
+            ? '/api/novedades'
+            : `/api/novedades?tipo=${currentNovFilter}`;
+        const list = await api(url).catch(() => []);
+        const el = document.getElementById('nov-list');
+        el.innerHTML =
+          list.length === 0
+            ? '<div class="empty-state"><i class="ti ti-bell-off"></i><div>Sin novedades</div></div>'
+            : list
+                .map(
+                  (n) => `
+        <div class="novedad-card ${n.tipo} ${n.leida ? 'leida' : ''}">
+          <div class="nov-icon ${n.tipo}"><i class="ti ${novIconMap[n.tipo] || 'ti-bell'}"></i></div>
+          <div>
+            <div class="nov-title">
+              ${n.titulo}
+              ${!n.leida ? '<span class="nov-unread"></span>' : ''}
+              ${n.patente ? `<span class="pill pill-gray" style="font-size:10px">${n.patente}</span>` : ''}
+            </div>
+            <div class="nov-detail">${n.descripcion}</div>
+            ${n.recordatorio_fecha ? `<div style="margin-top:4px;font-size:11px;color:var(--orange);font-family:var(--mono)"><i class="ti ti-calendar" style="font-size:11px"></i> Recordatorio: ${n.recordatorio_fecha}</div>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+            <span class="nov-time">${fmtFecha(n.creado_en)}</span>
+            <div style="display:flex;gap:6px">
+              ${n.vehiculo_id ? `<button class="icon-btn" title="Ver vehículo" onclick="openDetalle(${n.vehiculo_id})"><i class="ti ti-eye"></i></button>` : ''}
+              ${!n.leida ? `<button class="icon-btn" title="Marcar leída" onclick="marcarLeida(${n.id})"><i class="ti ti-check"></i></button>` : ''}
+            </div>
+          </div>
+        </div>`
+                )
+                .join('');
+      }
+      function filterNov(f, btn) {
+        currentNovFilter = f;
+        document
+          .querySelectorAll('#nov-filters .filter-btn')
+          .forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderNovedades();
+      }
+      async function marcarLeida(id) {
+        await api(`/api/novedades/${id}/leer`, { method: 'PUT' }).catch(() => {});
+        renderNovedades();
+        updateNotifBadge();
+      }
+      async function marcarTodoLeido() {
+        await api('/api/novedades/leer-todas', { method: 'PUT' }).catch(() => {});
+        renderNovedades();
+        updateNotifBadge();
+      }
+      async function updateNotifBadge(count) {
+        if (count === undefined) {
+          const list = await api('/api/novedades?leida=false').catch(() => []);
+          count = list.length;
+        }
+        const badge = document.getElementById('notif-badge');
+        badge.style.display = count > 0 ? 'block' : 'none';
+      }
+
+      // ── VEHÍCULOS ──────────────────────────────────────────────────────────────
+      function debounceVeh() {
+        clearTimeout(vehDebounceTimer);
+        vehDebounceTimer = setTimeout(renderVehiculos, 300);
+      }
+      async function renderVehiculos() {
+        const q = document.getElementById('veh-search')?.value || '';
+        const estado = document.getElementById('veh-filter-estado')?.value || '';
+        let url = '/api/vehiculos?';
+        if (q) url += `q=${encodeURIComponent(q)}&`;
+        if (estado) url += `estado=${estado}`;
+        const list = await api(url).catch(() => []);
+        document.getElementById('veh-tbody').innerHTML =
+          list.length === 0
+            ? `<tr><td colspan="7" class="empty-state">Sin resultados</td></tr>`
+            : list
+                .map(
+                  (v) => `
+        <tr>
+          <td class="mono" style="font-weight:500">
+            ${v.patente}
+            ${v.dias >= 15 ? '<span class="tag-urgente"><i class="ti ti-alert-triangle" style="font-size:10px"></i> urgente</span>' : ''}
+          </td>
+          <td>${v.modelo}</td>
+          <td>${v.cliente_nombre || '—'}</td>
+          <td style="font-size:12px;color:var(--muted)">${v.aseguradora || '—'}</td>
+          <td>${estadoPill(v.estado)}</td>
+          <td style="color:${diasColor(v.dias)};font-weight:500;font-family:var(--mono)">${v.dias}d</td>
+          <td><div class="actions">
+            <button class="icon-btn" title="Ver detalle" onclick="openDetalle(${v.id})"><i class="ti ti-eye"></i></button>
+            <button class="icon-btn" title="Editar" onclick="editVehiculo(${v.id})"><i class="ti ti-edit"></i></button>
+          </div></td>
+        </tr>`
+                )
+                .join('');
+      }
+
+      // ── CLIENTES ───────────────────────────────────────────────────────────────
+      async function renderClientes() {
+        const list = await api('/api/clientes').catch(() => []);
+        document.getElementById('cli-tbody').innerHTML =
+          list.length === 0
+            ? `<tr><td colspan="6" class="empty-state">Sin clientes registrados</td></tr>`
+            : list
+                .map(
+                  (c) => `
+        <tr>
+          <td style="font-weight:500">${c.nombre}</td>
+          <td class="mono">${c.dni || '—'}</td>
+          <td>${c.telefono}</td>
+          <td style="font-size:12px;color:var(--muted)">${c.email || '—'}</td>
+          <td><span class="pill pill-blue">${c.total_vehiculos} vehículo${c.total_vehiculos !== 1 ? 's' : ''}</span></td>
+          <td><div class="actions">
+            <button class="icon-btn" title="Editar" onclick="editCliente(${c.id})"><i class="ti ti-edit"></i></button>
+          </div></td>
+        </tr>`
+                )
+                .join('');
+      }
+
+      // ── SEGUIMIENTO ────────────────────────────────────────────────────────────
+      async function renderSeguimiento() {
+        const list = await api('/api/vehiculos?estado=esperando_seguro').catch(() => []);
+        const list2 = await api('/api/vehiculos?estado=ingresado').catch(() => []);
+        const todos = [...list, ...list2];
+        document.getElementById('seg-tbody').innerHTML =
+          todos.length === 0
+            ? `<tr><td colspan="7" class="empty-state">Sin casos pendientes</td></tr>`
+            : todos
+                .map((v) => {
+                  const alerta =
+                    v.dias >= 2
+                      ? `<span class="pill pill-red"><i class="ti ti-phone"></i> Llamar hoy</span>`
+                      : `<span class="pill pill-gray">En plazo</span>`;
+                  return `<tr>
+          <td>
+            <div style="font-weight:500">${v.modelo}</div>
+            <div class="mono" style="font-size:11px;color:var(--muted)">${v.patente}</div>
+          </td>
+          <td>${v.cliente_nombre || '—'}</td>
+          <td style="font-size:12px">${v.aseguradora || '—'}</td>
+          <td class="mono" style="font-size:12px">${v.nro_siniestro || '—'}</td>
+          <td style="color:${diasColor(v.dias)};font-weight:500;font-family:var(--mono)">${v.dias}d</td>
+          <td>${alerta}</td>
+          <td><div class="actions">
+            <button class="icon-btn" title="Ver / agregar novedad" onclick="openDetalle(${v.id})"><i class="ti ti-eye"></i></button>
+          </div></td>
+        </tr>`;
+                })
+                .join('');
+      }
+
+      // ── ENTREGA ────────────────────────────────────────────────────────────────
+      async function renderEntrega() {
+        const list = await api('/api/vehiculos?estado=listo').catch(() => []);
+        document.getElementById('ent-tbody').innerHTML =
+          list.length === 0
+            ? `<tr><td colspan="6" class="empty-state">Sin vehículos listos para entregar</td></tr>`
+            : list
+                .map(
+                  (v) => `
+        <tr>
+          <td><div style="font-weight:500">${v.modelo}</div><div class="mono" style="font-size:11px;color:var(--muted)">${v.patente}</div></td>
+          <td>${v.cliente_nombre || '—'}</td>
+          <td><a href="tel:${v.cliente_telefono}" style="color:var(--blue)">${v.cliente_telefono || '—'}</a></td>
+          <td style="color:var(--green);font-weight:500;font-family:var(--mono)">${v.dias}d</td>
+          <td>${v.en_taller === 'si' ? '<span class="pill pill-green">Sí</span>' : '<span class="pill pill-orange">No — coordinar</span>'}</td>
+          <td>
+            <button class="btn btn-green" onclick="marcarEntregado(${v.id})"><i class="ti ti-check"></i> Marcar entregado</button>
+          </td>
+        </tr>`
+                )
+                .join('');
+      }
+      async function marcarEntregado(id) {
+        const veh = await api(`/api/vehiculos/${id}`).catch(() => null);
+        if (!veh) return;
+        await api(`/api/vehiculos/${id}`, { method: 'PUT', body: { ...veh, estado: 'entregado' } });
+        showToast('Vehículo marcado como entregado', 'success');
+        renderEntrega();
+      }
+
+      // ── DETALLE ────────────────────────────────────────────────────────────────
+      async function openDetalle(id) {
+        detVehId = id;
+        const v = await api(`/api/vehiculos/${id}`).catch(() => null);
+        if (!v) return;
+        document.getElementById('det-title').textContent = `${v.modelo}  ·  ${v.patente}`;
+        document.getElementById('det-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-field"><div class="detail-field-label">PATENTE</div><div class="detail-field-val mono">${v.patente}</div></div>
+      <div class="detail-field"><div class="detail-field-label">MODELO</div><div class="detail-field-val">${v.modelo}</div></div>
+      <div class="detail-field"><div class="detail-field-label">AÑO / COLOR</div><div class="detail-field-val">${v.anio || '—'} / ${v.color || '—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">NRO. MOTOR</div><div class="detail-field-val mono">${v.nro_motor || '—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">CHASIS / VIN</div><div class="detail-field-val mono">${v.nro_chasis || '—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">KM. INGRESO</div><div class="detail-field-val">${v.km_ingreso ? v.km_ingreso.toLocaleString('es-AR') + ' km' : '—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">CLIENTE</div><div class="detail-field-val">${v.cliente_nombre || '—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">TELÉFONO</div><div class="detail-field-val"><a href="tel:${v.cliente_telefono}" style="color:var(--blue)">${v.cliente_telefono || '—'}</a></div></div>
+      <div class="detail-field"><div class="detail-field-label">AUTO EN TALLER</div><div class="detail-field-val">${v.en_taller === 'si' ? '<span class="pill pill-green">Sí</span>' : '<span class="pill pill-orange">No — trae al terminar</span>'}</div></div>
+      <div class="detail-field full"><div class="detail-field-label">ASEGURADORA / SINIESTRO</div><div class="detail-field-val">${v.aseguradora || '—'} &nbsp;·&nbsp; <span class="mono">${v.nro_siniestro || '—'}</span></div></div>
+      <div class="detail-field full"><div class="detail-field-label">ESTADO</div><div class="detail-field-val">${estadoPill(v.estado)} &nbsp; <span style="color:${diasColor(v.dias)};font-family:var(--mono);font-size:12px">${v.dias} días en el sistema</span></div></div>
+      ${v.trabajo ? `<div class="detail-field full"><div class="detail-field-label">TRABAJO</div><div class="detail-field-val">${v.trabajo}</div></div>` : ''}
+      ${v.observaciones ? `<div class="detail-field full"><div class="detail-field-label">OBSERVACIONES</div><div class="detail-field-val">${v.observaciones}</div></div>` : ''}
+    </div>
+    <div style="margin-top:16px">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--accent);letter-spacing:0.06em;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:6px">HISTORIAL DE NOVEDADES</div>
+      <div class="timeline">
+        ${
+          v.novedades.length === 0
+            ? '<div style="color:var(--muted);font-size:13px">Sin novedades registradas</div>'
+            : v.novedades
+                .map(
+                  (n, i, arr) => `
+              <div class="tl-item">
+                <div class="tl-dot-wrap">
+                  <div class="tl-dot" style="background:${n.tipo === 'alerta' ? 'var(--red)' : n.tipo === 'ok' ? 'var(--green)' : n.tipo === 'seguimiento' ? 'var(--orange)' : 'var(--blue)'}"></div>
+                  ${i < arr.length - 1 ? '<div class="tl-line"></div>' : ''}
+                </div>
+                <div class="tl-content">
+                  <div class="tl-text">${n.descripcion}</div>
+                  ${n.recordatorio_fecha ? `<div style="margin-top:3px;font-size:11px;color:var(--orange);font-family:var(--mono)">Recordatorio: ${n.recordatorio_fecha}</div>` : ''}
+                  <div class="tl-time">${fmtFecha(n.creado_en)}</div>
+                </div>
+              </div>`
+                )
+                .join('')
+        }
+      </div>
+    </div>`;
+        document.getElementById('det-nov-btn').onclick = () => {
+          closeModal('modal-detalle');
+          openModalNov();
+        };
+        document.getElementById('modal-detalle').classList.add('open');
+      }
+
+      // ── MODAL VEHÍCULO ─────────────────────────────────────────────────────────
+      async function openModalVeh() {
+        editVehId = null;
+        document.getElementById('modal-veh-title').textContent = 'Registrar vehículo';
+        document.getElementById('modal-veh').dataset.editId = '';
+        [
+          'vf-patente',
+          'vf-modelo',
+          'vf-motor',
+          'vf-chasis',
+          'vf-anio',
+          'vf-color',
+          'vf-km',
+          'vf-aseguradora',
+          'vf-siniestro',
+          'vf-trabajo',
+          'vf-obs',
+        ].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        document.getElementById('vf-estado').value = 'ingresado';
+        document.getElementById('vf-en-taller').value = 'si';
+        const clientes = await api('/api/clientes').catch(() => []);
+        document.getElementById('vf-cliente').innerHTML =
+          '<option value="">— Sin asignar —</option>' +
+          clientes.map((c) => `<option value="${c.id}">${c.nombre}</option>`).join('');
+        document.getElementById('modal-veh').classList.add('open');
+      }
+      async function editVehiculo(id) {
+        editVehId = id;
+        const v = await api(`/api/vehiculos/${id}`).catch(() => null);
+        if (!v) return;
+        document.getElementById('modal-veh-title').textContent = 'Editar vehículo';
+        const clientes = await api('/api/clientes').catch(() => []);
+        document.getElementById('vf-cliente').innerHTML =
+          '<option value="">— Sin asignar —</option>' +
+          clientes.map((c) => `<option value="${c.id}">${c.nombre}</option>`).join('');
+        document.getElementById('vf-patente').value = v.patente;
+        document.getElementById('vf-modelo').value = v.modelo;
+        document.getElementById('vf-motor').value = v.nro_motor || '';
+        document.getElementById('vf-chasis').value = v.nro_chasis || '';
+        document.getElementById('vf-anio').value = v.anio || '';
+        document.getElementById('vf-color').value = v.color || '';
+        document.getElementById('vf-km').value = v.km_ingreso || '';
+        document.getElementById('vf-cliente').value = v.cliente_id || '';
+        document.getElementById('vf-aseguradora').value = v.aseguradora || '';
+        document.getElementById('vf-siniestro').value = v.nro_siniestro || '';
+        document.getElementById('vf-estado').value = v.estado;
+        document.getElementById('vf-en-taller').value = v.en_taller || 'si';
+        document.getElementById('vf-trabajo').value = v.trabajo || '';
+        document.getElementById('vf-obs').value = v.observaciones || '';
+        document.getElementById('modal-veh').classList.add('open');
+      }
+      async function saveVehiculo() {
+        const body = {
+          patente: document.getElementById('vf-patente').value.trim().toUpperCase(),
+          modelo: document.getElementById('vf-modelo').value.trim(),
+          nro_motor: document.getElementById('vf-motor').value.trim(),
+          nro_chasis: document.getElementById('vf-chasis').value.trim(),
+          anio: document.getElementById('vf-anio').value,
+          color: document.getElementById('vf-color').value.trim(),
+          km_ingreso: document.getElementById('vf-km').value || null,
+          cliente_id: document.getElementById('vf-cliente').value || null,
+          aseguradora: document.getElementById('vf-aseguradora').value.trim(),
+          nro_siniestro: document.getElementById('vf-siniestro').value.trim(),
+          estado: document.getElementById('vf-estado').value,
+          en_taller: document.getElementById('vf-en-taller').value,
+          trabajo: document.getElementById('vf-trabajo').value.trim(),
+          observaciones: document.getElementById('vf-obs').value.trim(),
+        };
+        if (!body.patente || !body.modelo)
+          return showToast('Patente y modelo son obligatorios', 'error');
+        try {
+          if (editVehId) {
+            await api(`/api/vehiculos/${editVehId}`, { method: 'PUT', body });
+            showToast('Vehículo actualizado', 'success');
+          } else {
+            await api('/api/vehiculos', { method: 'POST', body });
+            showToast('Vehículo registrado', 'success');
+          }
+          closeModal('modal-veh');
+          renderVehiculos();
+        } catch (e) {
+          showToast(e.message, 'error');
+        }
+      }
+
+      // ── MODAL CLIENTE ──────────────────────────────────────────────────────────
+      function openModalCliente() {
+        editCliId = null;
+        document.getElementById('modal-cli-title').textContent = 'Registrar cliente';
+        ['cf-nombre', 'cf-dni', 'cf-tel', 'cf-email', 'cf-dir', 'cf-obs'].forEach((id) => {
+          document.getElementById(id).value = '';
+        });
+        document.getElementById('modal-cli').classList.add('open');
+      }
+      async function editCliente(id) {
+        editCliId = id;
+        const c = await api(`/api/clientes/${id}`).catch(() => null);
+        if (!c) return;
+        document.getElementById('modal-cli-title').textContent = 'Editar cliente';
+        document.getElementById('cf-nombre').value = c.nombre;
+        document.getElementById('cf-dni').value = c.dni || '';
+        document.getElementById('cf-tel').value = c.telefono;
+        document.getElementById('cf-email').value = c.email || '';
+        document.getElementById('cf-dir').value = c.direccion || '';
+        document.getElementById('cf-obs').value = c.observaciones || '';
+        document.getElementById('modal-cli').classList.add('open');
+      }
+      async function saveCliente() {
+        const body = {
+          nombre: document.getElementById('cf-nombre').value.trim(),
+          dni: document.getElementById('cf-dni').value.trim(),
+          telefono: document.getElementById('cf-tel').value.trim(),
+          email: document.getElementById('cf-email').value.trim(),
+          direccion: document.getElementById('cf-dir').value.trim(),
+          observaciones: document.getElementById('cf-obs').value.trim(),
+        };
+        if (!body.nombre || !body.telefono)
+          return showToast('Nombre y teléfono son obligatorios', 'error');
+        try {
+          if (editCliId) {
+            await api(`/api/clientes/${editCliId}`, { method: 'PUT', body });
+            showToast('Cliente actualizado', 'success');
+          } else {
+            await api('/api/clientes', { method: 'POST', body });
+            showToast('Cliente registrado', 'success');
+          }
+          closeModal('modal-cli');
+          renderClientes();
+        } catch (e) {
+          showToast(e.message, 'error');
+        }
+      }
+
+      // ── MODAL NOVEDAD ──────────────────────────────────────────────────────────
+      function openModalNov() {
+        document.getElementById('nf-desc').value = '';
+        document.getElementById('nf-tipo').value = 'info';
+        document.getElementById('modal-nov').classList.add('open');
+      }
+      async function saveNovedad() {
+        const tipo = document.getElementById('nf-tipo').value;
+        const desc = document.getElementById('nf-desc').value.trim();
+        if (!desc) return showToast('Escribí una descripción', 'error');
+        const veh = await api(`/api/vehiculos/${detVehId}`).catch(() => null);
+        const titulo = veh
+          ? `${veh.patente} — ${tipo === 'seguimiento' ? 'Seguimiento aseguradora' : tipo === 'alerta' ? 'Alerta' : tipo === 'ok' ? 'Resuelto' : 'Info'}`
+          : 'Nueva novedad';
+        try {
+          await api('/api/novedades', {
+            method: 'POST',
+            body: { vehiculo_id: detVehId, tipo, titulo, descripcion: desc },
+          });
+          showToast(
+            tipo === 'seguimiento'
+              ? 'Novedad guardada + recordatorio creado en 2 días hábiles'
+              : 'Novedad guardada',
+            'success'
+          );
+          closeModal('modal-nov');
+          updateNotifBadge();
+          openDetalle(detVehId);
+        } catch (e) {
+          showToast(e.message, 'error');
+        }
+      }
+
+      // ── UTILIDADES ─────────────────────────────────────────────────────────────
+      function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+      }
+      function overlayClose(e, id) {
+        if (e.target === e.currentTarget) closeModal(id);
+      }
+      function showToast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = `toast ${type} show`;
+        setTimeout(() => t.classList.remove('show'), 3000);
+      }
+
+      // ── INIT ───────────────────────────────────────────────────────────────────
+      renderDashboard();
+      updateNotifBadge();
+      // Polling de novedades cada 60 segundos
+      setInterval(updateNotifBadge, 60000);
+    </script>
+  </body>
+</html>
