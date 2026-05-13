@@ -14,7 +14,7 @@
     />
     <style>
       :root {
-        --app-max-width: 1440px;
+        --app-max-width: 100%; /* CORRECCIÓN 1: De 1440px a 100% para evitar márgenes negros */
         --bg-out: #050505;
         --bg: #0f0f0f;
         --surface: #181818;
@@ -49,7 +49,7 @@
         font-family: var(--sans);
         font-size: 14px;
         height: 100vh;
-        overflow: hidden; /* CORRECCIÓN: Evita el doble scroll en móviles */
+        overflow: hidden; /* CORRECCIÓN: Previene el doble scroll en celular */
       }
       a {
         color: inherit;
@@ -82,6 +82,23 @@
         transition: all 0.15s;
       }
 
+      /* CORRECCIÓN 2: Sacamos el mobile-overlay del @media para que no rompa la grilla en PC y cause el vacío negro */
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        inset: 52px 0 0 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 210;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+      .mobile-overlay.active {
+        display: block;
+        opacity: 1;
+        pointer-events: auto;
+      }
+
       @media (max-width: 768px) {
         .menu-btn {
           display: flex;
@@ -105,21 +122,6 @@
         }
         .sidebar.open {
           left: 0;
-        }
-        .mobile-overlay {
-          display: none;
-          position: fixed;
-          inset: 52px 0 0 0;
-          background: rgba(0,0,0,0.5);
-          z-index: 210;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          pointer-events: none;
-        }
-        .mobile-overlay.active {
-          display: block;
-          opacity: 1;
-          pointer-events: auto;
         }
         .topbar {
           padding: 0 16px;
@@ -160,10 +162,9 @@
         .detail-grid {
           grid-template-columns: 1fr !important;
         }
-        /* CORRECCIÓN: Ajuste de modales en móvil */
         .modal {
           width: calc(100% - 32px);
-          max-height: calc(100vh - 32px);
+          max-height: calc(100vh - 32px); /* Limita el modal en móviles */
           margin: 16px;
         }
         .search-wrap,
@@ -504,15 +505,15 @@
         gap: 8px;
       }
       
-      /* CORRECCIÓN: Tablas horizontales scrolleables y no aplastadas */
+      /* CORRECCIÓN 3: Ancho mínimo para tablas para que no se aplasten horizontalmente */
       .table-wrap {
         overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        -webkit-overflow-scrolling: touch; /* Scroll suave en móviles */
       }
       table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 800px; /* Evita que las columnas colapsen en celular */
+        min-width: 800px; /* <--- Esto salva la tabla en celulares */
       }
       th {
         font-size: 11px;
@@ -805,7 +806,7 @@
         white-space: nowrap;
       }
 
-      /* ── MODAL (CORRECCIÓN: Flexbox interno para que no se oculten los botones) ── */
+      /* ── MODAL ── */
       .overlay {
         display: none;
         position: fixed;
@@ -820,6 +821,7 @@
       .overlay.open {
         display: flex;
       }
+      /* CORRECCIÓN 4: Modales divididos para que las herramientas no se salgan del cuadro */
       .modal {
         background: var(--surface);
         border: 1px solid var(--border2);
@@ -827,9 +829,9 @@
         width: 700px;
         max-width: 100%;
         max-height: 90vh;
-        display: flex;
-        flex-direction: column; /* Permite dividir cabecera, cuerpo y pie */
         margin: auto;
+        display: flex;
+        flex-direction: column; /* Esto impide que el contenido oculte el botón de guardar */
       }
       .modal-sm {
         width: 500px;
@@ -840,7 +842,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        flex-shrink: 0; /* Impide que la cabecera se encoja */
+        flex-shrink: 0;
       }
       .modal-title {
         font-size: 15px;
@@ -851,8 +853,8 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
-        flex: 1; /* Ocupa el espacio disponible */
-        overflow-y: auto; /* Scroll interno solo para el formulario */
+        overflow-y: auto; /* Permite scroll interno */
+        flex: 1;
       }
       .modal-foot {
         padding: 14px 24px;
@@ -860,9 +862,8 @@
         display: flex;
         justify-content: flex-end;
         gap: 8px;
-        flex-shrink: 0; /* Impide que el pie de los botones se oculte */
+        flex-shrink: 0;
       }
-      
       .form-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
