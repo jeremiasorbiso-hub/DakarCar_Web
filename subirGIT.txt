@@ -1,0 +1,5 @@
+git add . (para preparar los cambios)
+
+git commit -m "Acá escribís lo que cambiaste" (para guardar la foto local)
+
+git push (para mandarlo a GitHub)
