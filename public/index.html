@@ -14,7 +14,7 @@
     />
     <style>
       :root {
-        --app-max-width: 100%; /* CORRECCIÓN 1: De 1440px a 100% para evitar márgenes negros */
+        --app-max-width: 100%;
         --bg-out: #050505;
         --bg: #0f0f0f;
         --surface: #181818;
@@ -49,7 +49,7 @@
         font-family: var(--sans);
         font-size: 14px;
         height: 100vh;
-        overflow: hidden; /* CORRECCIÓN: Previene el doble scroll en celular */
+        overflow: hidden;
       }
       a {
         color: inherit;
@@ -82,7 +82,6 @@
         transition: all 0.15s;
       }
 
-      /* CORRECCIÓN 2: Sacamos el mobile-overlay del @media para que no rompa la grilla en PC y cause el vacío negro */
       .mobile-overlay {
         display: none;
         position: fixed;
@@ -164,7 +163,7 @@
         }
         .modal {
           width: calc(100% - 32px);
-          max-height: calc(100vh - 32px); /* Limita el modal en móviles */
+          max-height: calc(100vh - 32px);
           margin: 16px;
         }
         .search-wrap,
@@ -505,15 +504,14 @@
         gap: 8px;
       }
       
-      /* CORRECCIÓN 3: Ancho mínimo para tablas para que no se aplasten horizontalmente */
       .table-wrap {
         overflow-x: auto;
-        -webkit-overflow-scrolling: touch; /* Scroll suave en móviles */
+        -webkit-overflow-scrolling: touch;
       }
       table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 800px; /* <--- Esto salva la tabla en celulares */
+        min-width: 800px;
       }
       th {
         font-size: 11px;
@@ -821,7 +819,6 @@
       .overlay.open {
         display: flex;
       }
-      /* CORRECCIÓN 4: Modales divididos para que las herramientas no se salgan del cuadro */
       .modal {
         background: var(--surface);
         border: 1px solid var(--border2);
@@ -831,7 +828,7 @@
         max-height: 90vh;
         margin: auto;
         display: flex;
-        flex-direction: column; /* Esto impide que el contenido oculte el botón de guardar */
+        flex-direction: column;
       }
       .modal-sm {
         width: 500px;
@@ -853,7 +850,7 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
-        overflow-y: auto; /* Permite scroll interno */
+        overflow-y: auto;
         flex: 1;
       }
       .modal-foot {
@@ -1043,7 +1040,6 @@
       <div class="mobile-overlay" id="mobile-overlay"></div>
 
       <main class="main" aria-live="polite">
-        <!-- DASHBOARD -->
         <div class="page active" id="page-dashboard">
           <div class="page-header">
             <div>
@@ -1085,7 +1081,6 @@
           </div>
         </div>
 
-        <!-- NOVEDADES -->
         <div class="page" id="page-novedades">
           <div class="page-header">
             <div>
@@ -1118,7 +1113,6 @@
           <div class="novedades-list" id="nov-list"><div class="loading">Cargando...</div></div>
         </div>
 
-        <!-- VEHÍCULOS -->
         <div class="page" id="page-vehiculos">
           <div class="page-header">
             <div>
@@ -1173,7 +1167,6 @@
           </div>
         </div>
 
-        <!-- CLIENTES -->
         <div class="page" id="page-clientes">
           <div class="page-header">
             <div>
@@ -1207,7 +1200,6 @@
           </div>
         </div>
 
-        <!-- SEGUIMIENTO -->
         <div class="page" id="page-seguimiento">
           <div class="page-header">
             <div>
@@ -1239,7 +1231,6 @@
           </div>
         </div>
 
-        <!-- ENTREGA -->
         <div class="page" id="page-entrega">
           <div class="page-header">
             <div>
@@ -1272,9 +1263,6 @@
       </main>
     </div>
 
-    <!-- ═══════════════════ MODALES ═══════════════════ -->
-
-    <!-- MODAL VEHÍCULO -->
     <div class="overlay" id="modal-veh" onclick="overlayClose(event, 'modal-veh')">
       <div class="modal">
         <div class="modal-head">
@@ -1368,7 +1356,6 @@
       </div>
     </div>
 
-    <!-- MODAL CLIENTE -->
     <div class="overlay" id="modal-cli" onclick="overlayClose(event, 'modal-cli')">
       <div class="modal modal-sm">
         <div class="modal-head">
@@ -1414,7 +1401,6 @@
       </div>
     </div>
 
-    <!-- MODAL DETALLE VEHÍCULO -->
     <div class="overlay" id="modal-detalle" onclick="overlayClose(event, 'modal-detalle')">
       <div class="modal">
         <div class="modal-head">
@@ -1433,7 +1419,6 @@
       </div>
     </div>
 
-    <!-- MODAL NOVEDAD -->
     <div class="overlay" id="modal-nov" onclick="overlayClose(event, 'modal-nov')">
       <div class="modal modal-sm">
         <div class="modal-head">
@@ -1470,10 +1455,8 @@
       </div>
     </div>
 
-    <!-- TOAST -->
     <div class="toast" id="toast"></div>
 
-    <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
     <script>
       const API = '';
       let currentPage = 'dashboard';
@@ -1515,7 +1498,6 @@
         document.querySelectorAll('.nav-item').forEach((n) => n.classList.remove('active'));
         document.getElementById('page-' + name).classList.add('active');
         document.querySelector(`.nav-item[data-page="${name}"]`)?.classList.add('active');
-        // Close sidebar on mobile after navigation
         if (window.innerWidth <= 768) {
           closeSidebar();
         }
@@ -1540,7 +1522,6 @@
         updateMobileOverlay(sidebar.classList.contains('open'));
       }
 
-      // Close sidebar when clicking outside it on mobile
       document.addEventListener('click', function(e) {
         const sidebar = document.querySelector('.sidebar');
         if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
@@ -1614,7 +1595,11 @@
               .map(
                 (v) => `
       <tr>
-        <td class="mono">${v.patente}${v.dias >= 15 ? '<span class="tag-urgente"><i class="ti ti-alert-triangle" style="font-size:10px"></i> urgente</span>' : ''}</td>
+        <td class="mono">
+            ${v.patente}
+            ${v.dias >= 15 ? '<span class="tag-urgente"><i class="ti ti-alert-triangle" style="font-size:10px"></i> urgente</span>' : ''}
+            <div style="font-size:10px; color:var(--muted); margin-top:2px;">Ref: ${v.nro_siniestro || 'Particular'}</div>
+        </td>
         <td>${v.modelo}</td>
         <td>${v.cliente_nombre || '—'}</td>
         <td>${estadoPill(v.estado)}</td>
@@ -1722,6 +1707,7 @@
           <td class="mono" style="font-weight:500">
             ${v.patente}
             ${v.dias >= 15 ? '<span class="tag-urgente"><i class="ti ti-alert-triangle" style="font-size:10px"></i> urgente</span>' : ''}
+            <div style="font-size:11px; color:var(--accent); margin-top:4px;">#${v.nro_siniestro || 'Particular'}</div>
           </td>
           <td>${v.modelo}</td>
           <td>${v.cliente_nombre || '—'}</td>
@@ -1827,7 +1813,11 @@
         detVehId = id;
         const v = await api(`/api/vehiculos/${id}`).catch(() => null);
         if (!v) return;
-        document.getElementById('det-title').textContent = `${v.modelo}  ·  ${v.patente}`;
+        
+        // AGREGADO: Identificamos visualmente el siniestro en el título del modal
+        const tituloSiniestro = v.nro_siniestro ? `(Siniestro: ${v.nro_siniestro})` : '(Particular)';
+        document.getElementById('det-title').textContent = `${v.modelo}  ·  ${v.patente} ${tituloSiniestro}`;
+        
         document.getElementById('det-body').innerHTML = `
     <div class="detail-grid">
       <div class="detail-field"><div class="detail-field-label">PATENTE</div><div class="detail-field-val mono">${v.patente}</div></div>
@@ -1839,7 +1829,12 @@
       <div class="detail-field"><div class="detail-field-label">CLIENTE</div><div class="detail-field-val">${v.cliente_nombre || '—'}</div></div>
       <div class="detail-field"><div class="detail-field-label">TELÉFONO</div><div class="detail-field-val"><a href="tel:${v.cliente_telefono}" style="color:var(--blue)">${v.cliente_telefono || '—'}</a></div></div>
       <div class="detail-field"><div class="detail-field-label">AUTO EN TALLER</div><div class="detail-field-val">${v.en_taller === 'si' ? '<span class="pill pill-green">Sí</span>' : '<span class="pill pill-orange">No — trae al terminar</span>'}</div></div>
-      <div class="detail-field full"><div class="detail-field-label">ASEGURADORA / SINIESTRO</div><div class="detail-field-val">${v.aseguradora || '—'} &nbsp;·&nbsp; <span class="mono">${v.nro_siniestro || '—'}</span></div></div>
+      
+      <div class="detail-field full" style="border: 1px solid var(--accent); background: var(--surface);">
+        <div class="detail-field-label" style="color: var(--accent);">ASEGURADORA / CASO ACTIVO</div>
+        <div class="detail-field-val">${v.aseguradora || '—'} &nbsp;·&nbsp; <span class="mono">${v.nro_siniestro || 'Particular'}</span></div>
+      </div>
+      
       <div class="detail-field full"><div class="detail-field-label">ESTADO</div><div class="detail-field-val">${estadoPill(v.estado)} &nbsp; <span style="color:${diasColor(v.dias)};font-family:var(--mono);font-size:12px">${v.dias} días en el sistema</span></div></div>
       ${v.trabajo ? `<div class="detail-field full"><div class="detail-field-label">TRABAJO</div><div class="detail-field-val">${v.trabajo}</div></div>` : ''}
       ${v.observaciones ? `<div class="detail-field full"><div class="detail-field-label">OBSERVACIONES</div><div class="detail-field-val">${v.observaciones}</div></div>` : ''}
