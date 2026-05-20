@@ -991,6 +991,15 @@
           grid-template-columns: 1fr !important;
         }
       }
+      /* Centrar el bloque del calendario dentro de la página */
+      #cal-layout {
+        justify-content: center;
+        max-width: 980px;
+        margin: 0 auto;
+        width: 100%;
+        align-items: start;
+        gap: 16px;
+      }
       @media (max-width: 540px) {
         #cal-grid > div[onclick] {
           min-height: 38px !important;
