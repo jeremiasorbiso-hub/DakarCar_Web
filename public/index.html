@@ -984,6 +984,18 @@
         color: var(--muted);
         margin-top: 2px;
       }
+
+      /* ── CALENDARIO ── */
+      @media (max-width: 900px) {
+        #cal-layout {
+          grid-template-columns: 1fr !important;
+        }
+      }
+      @media (max-width: 540px) {
+        #cal-grid > div[onclick] {
+          min-height: 38px !important;
+        }
+      }
       .loading {
         text-align: center;
         padding: 30px;
@@ -1035,6 +1047,10 @@
         </div>
         <div class="nav-item" data-page="entrega" onclick="goPage('entrega')">
           <i class="ti ti-check"></i> Listos p/ entregar
+        </div>
+        <div class="nav-section">AGENDA</div>
+        <div class="nav-item" data-page="calendario" onclick="goPage('calendario')">
+          <i class="ti ti-calendar"></i> Calendario
         </div>
       </nav>
       <div class="mobile-overlay" id="mobile-overlay"></div>
@@ -1260,6 +1276,33 @@
             </div>
           </div>
         </div>
+        <div class="page" id="page-calendario">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Calendario</div>
+              <div class="page-sub">Agenda y recordatorios del taller</div>
+            </div>
+            <button class="btn btn-primary" onclick="openModalEvento()">
+              <i class="ti ti-plus"></i> Nuevo evento
+            </button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start" id="cal-layout">
+            <div class="card">
+              <div class="card-header" id="cal-nav" style="justify-content:space-between">
+                <button class="icon-btn" onclick="calPrevMonth()"><i class="ti ti-chevron-left"></i></button>
+                <div class="card-title" id="cal-month-label" style="font-size:14px;font-weight:600"></div>
+                <button class="icon-btn" onclick="calNextMonth()"><i class="ti ti-chevron-right"></i></button>
+              </div>
+              <div id="cal-grid" style="padding:12px"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><i class="ti ti-list" style="color:var(--accent)"></i> Próximos eventos</div>
+              </div>
+              <div id="cal-upcoming" style="padding:12px;display:flex;flex-direction:column;gap:8px"></div>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
 
@@ -1430,25 +1473,83 @@
         <div class="modal-body">
           <div class="fg">
             <label>TIPO</label>
-            <select id="nf-tipo">
+            <select id="nf-tipo" onchange="updateNovPlaceholder()">
               <option value="info">Información general</option>
               <option value="seguimiento">Seguimiento aseguradora</option>
               <option value="alerta">Alerta / urgente</option>
               <option value="ok">Resuelto</option>
             </select>
           </div>
+          <div id="nf-tipo-hint" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:-8px;display:none"></div>
           <div class="fg">
-            <label>DESCRIPCIÓN *</label>
+            <label>TÍTULO DE LA NOVEDAD *</label>
+            <input id="nf-titulo" placeholder="Ej: Llamamos a Federación Patronal" />
+          </div>
+          <div class="fg">
+            <label>DESCRIPCIÓN</label>
             <textarea
               id="nf-desc"
-              style="min-height: 100px"
-              placeholder="Ej: Llamamos a Federación Patronal, no tienen denuncia registrada. Reintentamos en 2 días hábiles.&#10;&#10;Si seleccionás 'Seguimiento aseguradora', el sistema crea un recordatorio automático en 2 días hábiles."
+              style="min-height: 80px"
+              placeholder="Detalle adicional (opcional)..."
             ></textarea>
+          </div>
+          <div id="nf-alerta-opciones" style="display:none">
+            <div class="fg">
+              <label>⏰ MOSTRAR ALERTA EN EL DASHBOARD EN (días)</label>
+              <input id="nf-alerta-dias" type="number" min="0" max="365" value="0" placeholder="0 = inmediato" />
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">0 días = aparece ya en el dashboard. Podés poner 3, 7, 15... para que aparezca más adelante.</div>
+            </div>
           </div>
         </div>
         <div class="modal-foot">
           <button class="btn btn-ghost" onclick="closeModal('modal-nov')">Cancelar</button>
           <button class="btn btn-primary" onclick="saveNovedad()">
+            <i class="ti ti-device-floppy"></i> Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Evento Calendario -->
+    <div class="overlay" id="modal-evento" onclick="overlayClose(event, 'modal-evento')">
+      <div class="modal modal-sm">
+        <div class="modal-head">
+          <div class="modal-title" id="modal-evento-title">Nuevo evento</div>
+          <button class="icon-btn" onclick="closeModal('modal-evento')">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="fg">
+            <label>TÍTULO DEL EVENTO *</label>
+            <input id="ev-titulo" placeholder="Ej: Traer Toyota Corolla ABC123" />
+          </div>
+          <div class="fg">
+            <label>FECHA *</label>
+            <input id="ev-fecha" type="date" />
+          </div>
+          <div class="fg">
+            <label>HORA (opcional)</label>
+            <input id="ev-hora" type="time" placeholder="09:00" />
+          </div>
+          <div class="fg">
+            <label>DESCRIPCIÓN / NOTAS</label>
+            <textarea id="ev-desc" style="min-height:70px" placeholder="Detalles adicionales..."></textarea>
+          </div>
+          <div class="fg">
+            <label>COLOR</label>
+            <div id="ev-color-picker" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">
+              <button type="button" class="ev-color-btn active" data-color="accent" style="width:28px;height:28px;border-radius:50%;background:var(--accent);border:3px solid white;cursor:pointer" onclick="selectEvColor('accent', this)"></button>
+              <button type="button" class="ev-color-btn" data-color="blue" style="width:28px;height:28px;border-radius:50%;background:var(--blue);border:3px solid transparent;cursor:pointer" onclick="selectEvColor('blue', this)"></button>
+              <button type="button" class="ev-color-btn" data-color="green" style="width:28px;height:28px;border-radius:50%;background:var(--green);border:3px solid transparent;cursor:pointer" onclick="selectEvColor('green', this)"></button>
+              <button type="button" class="ev-color-btn" data-color="red" style="width:28px;height:28px;border-radius:50%;background:var(--red);border:3px solid transparent;cursor:pointer" onclick="selectEvColor('red', this)"></button>
+              <button type="button" class="ev-color-btn" data-color="orange" style="width:28px;height:28px;border-radius:50%;background:var(--orange);border:3px solid transparent;cursor:pointer" onclick="selectEvColor('orange', this)"></button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-evento')">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveEvento()">
             <i class="ti ti-device-floppy"></i> Guardar
           </button>
         </div>
@@ -1510,6 +1611,7 @@
         else if (name === 'clientes') renderClientes();
         else if (name === 'seguimiento') renderSeguimiento();
         else if (name === 'entrega') renderEntrega();
+        else if (name === 'calendario') renderCalendario();
       }
       function refreshAll() {
         renderPage(currentPage);
@@ -1573,7 +1675,7 @@
 
           document.getElementById('dash-alerts').innerHTML =
             alertas.length === 0
-              ? '<div class="empty-state"><i class="ti ti-circle-check"></i><div>Sin alertas activas</div></div>'
+              ? '<div class="empty-state"><i class="ti ti-circle-check"></i><div>Sin alertas activas</div><div style="font-size:11px;margin-top:4px;color:var(--muted)">Las alertas aparecen aquí cuando agregás una novedad de tipo "Alerta / urgente"</div></div>'
               : alertas
                   .map(
                     (a) => `
@@ -1652,6 +1754,7 @@
             <div style="display:flex;gap:6px">
               ${n.vehiculo_id ? `<button class="icon-btn" title="Ver vehículo" onclick="openDetalle(${n.vehiculo_id})"><i class="ti ti-eye"></i></button>` : ''}
               ${!n.leida ? `<button class="icon-btn" title="Marcar leída" onclick="marcarLeida(${n.id})"><i class="ti ti-check"></i></button>` : ''}
+              <button class="icon-btn danger" title="Eliminar novedad" onclick="eliminarNovedad(${n.id})"><i class="ti ti-trash"></i></button>
             </div>
           </div>
         </div>`
@@ -1801,11 +1904,17 @@
                 .join('');
       }
       async function marcarEntregado(id) {
-        const veh = await api(`/api/vehiculos/${id}`).catch(() => null);
-        if (!veh) return;
-        await api(`/api/vehiculos/${id}`, { method: 'PUT', body: { ...veh, estado: 'entregado' } });
-        showToast('Vehículo marcado como entregado', 'success');
-        renderEntrega();
+        if (!confirm('¿Confirmás que el vehículo fue entregado al cliente?')) return;
+        try {
+          const veh = await api(`/api/vehiculos/${id}`).catch(() => null);
+          if (!veh) return showToast('No se encontró el vehículo', 'error');
+          await api(`/api/vehiculos/${id}`, { method: 'PUT', body: { ...veh, estado: 'entregado', en_taller: 'no' } });
+          showToast('Vehículo entregado — estado actualizado a Entregado ✓', 'success');
+          renderEntrega();
+          // If dashboard is in background, it will refresh next time
+        } catch(e) {
+          showToast('Error: ' + e.message, 'error');
+        }
       }
 
       // ── DETALLE ────────────────────────────────────────────────────────────────
@@ -1853,10 +1962,16 @@
                   <div class="tl-dot" style="background:${n.tipo === 'alerta' ? 'var(--red)' : n.tipo === 'ok' ? 'var(--green)' : n.tipo === 'seguimiento' ? 'var(--orange)' : 'var(--blue)'}"></div>
                   ${i < arr.length - 1 ? '<div class="tl-line"></div>' : ''}
                 </div>
-                <div class="tl-content">
-                  <div class="tl-text">${n.descripcion}</div>
-                  ${n.recordatorio_fecha ? `<div style="margin-top:3px;font-size:11px;color:var(--orange);font-family:var(--mono)">Recordatorio: ${n.recordatorio_fecha}</div>` : ''}
-                  <div class="tl-time">${fmtFecha(n.creado_en)}</div>
+                <div class="tl-content" style="flex:1">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+                    <div>
+                      <div class="tl-text" style="font-weight:500">${n.titulo}</div>
+                      ${n.descripcion ? `<div class="tl-text" style="color:var(--muted);font-size:12px;margin-top:2px">${n.descripcion}</div>` : ''}
+                      ${n.recordatorio_fecha ? `<div style="margin-top:3px;font-size:11px;color:var(--orange);font-family:var(--mono)">Recordatorio: ${n.recordatorio_fecha}</div>` : ''}
+                      <div class="tl-time">${fmtFecha(n.creado_en)}</div>
+                    </div>
+                    <button class="icon-btn danger" style="width:24px;height:24px;font-size:11px;flex-shrink:0" title="Eliminar" onclick="eliminarNovedad(${n.id})"><i class="ti ti-trash"></i></button>
+                  </div>
                 </div>
               </div>`
                 )
@@ -2008,35 +2123,233 @@
       }
 
       // ── MODAL NOVEDAD ──────────────────────────────────────────────────────────
+      const novHints = {
+        seguimiento: '⏰ Se creará un recordatorio automático en 2 días hábiles.',
+        alerta: '🔴 Esta novedad aparecerá en el Dashboard como alerta activa. Podés elegir en cuántos días.',
+        info: '',
+        ok: '',
+      };
+      function updateNovPlaceholder() {
+        const tipo = document.getElementById('nf-tipo').value;
+        const hint = document.getElementById('nf-tipo-hint');
+        const msg = novHints[tipo] || '';
+        hint.textContent = msg;
+        hint.style.display = msg ? 'block' : 'none';
+        const alertaOpts = document.getElementById('nf-alerta-opciones');
+        alertaOpts.style.display = tipo === 'alerta' ? 'block' : 'none';
+      }
       function openModalNov() {
+        document.getElementById('nf-titulo').value = '';
         document.getElementById('nf-desc').value = '';
         document.getElementById('nf-tipo').value = 'info';
+        document.getElementById('nf-alerta-dias').value = '0';
+        updateNovPlaceholder();
         document.getElementById('modal-nov').classList.add('open');
+        setTimeout(() => document.getElementById('nf-titulo').focus(), 100);
       }
       async function saveNovedad() {
         const tipo = document.getElementById('nf-tipo').value;
+        const titulo = document.getElementById('nf-titulo').value.trim();
         const desc = document.getElementById('nf-desc').value.trim();
-        if (!desc) return showToast('Escribí una descripción', 'error');
-        const veh = await api(`/api/vehiculos/${detVehId}`).catch(() => null);
-        const titulo = veh
-          ? `${veh.patente} — ${tipo === 'seguimiento' ? 'Seguimiento aseguradora' : tipo === 'alerta' ? 'Alerta' : tipo === 'ok' ? 'Resuelto' : 'Info'}`
-          : 'Nueva novedad';
+        const alertaDias = parseInt(document.getElementById('nf-alerta-dias').value) || 0;
+        if (!titulo) return showToast('El título es obligatorio', 'error');
+        // Para alertas: calcular fecha de activación
+        let recordatorio_fecha = null;
+        if (tipo === 'seguimiento') {
+          // 2 días hábiles
+          let d = new Date(); let added = 0;
+          while (added < 2) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) added++; }
+          recordatorio_fecha = d.toISOString().split('T')[0];
+        } else if (tipo === 'alerta' && alertaDias > 0) {
+          let d = new Date();
+          d.setDate(d.getDate() + alertaDias);
+          recordatorio_fecha = d.toISOString().split('T')[0];
+        }
         try {
           await api('/api/novedades', {
             method: 'POST',
-            body: { vehiculo_id: detVehId, tipo, titulo, descripcion: desc },
+            body: { vehiculo_id: detVehId, tipo, titulo, descripcion: desc, recordatorio_fecha },
           });
-          showToast(
-            tipo === 'seguimiento'
-              ? 'Novedad guardada + recordatorio creado en 2 días hábiles'
-              : 'Novedad guardada',
-            'success'
-          );
+          const msg = tipo === 'seguimiento'
+            ? 'Novedad guardada — recordatorio en 2 días hábiles'
+            : tipo === 'alerta' && alertaDias > 0
+              ? `Alerta guardada — aparecerá en ${alertaDias} día${alertaDias !== 1 ? 's' : ''}`
+              : 'Novedad guardada';
+          showToast(msg, 'success');
           closeModal('modal-nov');
           updateNotifBadge();
           openDetalle(detVehId);
         } catch (e) {
           showToast(e.message, 'error');
+        }
+      }
+      async function eliminarNovedad(id) {
+        if (!confirm('¿Eliminar esta novedad? Esta acción no se puede deshacer.')) return;
+        try {
+          await api(`/api/novedades/${id}`, { method: 'DELETE' });
+          showToast('Novedad eliminada', 'success');
+          // Refresh the right place
+          if (detVehId) openDetalle(detVehId);
+          if (currentPage === 'novedades') renderNovedades();
+          updateNotifBadge();
+        } catch (e) {
+          showToast('Error al eliminar: ' + e.message, 'error');
+        }
+      }
+
+      // ── CALENDARIO (localStorage) ──────────────────────────────────────────────
+      let calYear = new Date().getFullYear();
+      let calMonth = new Date().getMonth(); // 0-based
+      let editEventoId = null;
+      let selectedEvColor = 'accent';
+      const CAL_KEY = 'taller_eventos_v1';
+      const colorVars = { accent: '#e8c547', blue: '#4a9ee8', green: '#4caf7d', red: '#e24b4a', orange: '#e8904a' };
+
+      function loadEventos() {
+        try { return JSON.parse(localStorage.getItem(CAL_KEY) || '[]'); } catch { return []; }
+      }
+      function saveEventos(evs) {
+        localStorage.setItem(CAL_KEY, JSON.stringify(evs));
+      }
+      function selectEvColor(color, btn) {
+        selectedEvColor = color;
+        document.querySelectorAll('.ev-color-btn').forEach(b => b.style.border = '3px solid transparent');
+        btn.style.border = '3px solid white';
+      }
+      function openModalEvento(fecha) {
+        editEventoId = null;
+        selectedEvColor = 'accent';
+        document.getElementById('ev-titulo').value = '';
+        document.getElementById('ev-fecha').value = fecha || new Date().toISOString().split('T')[0];
+        document.getElementById('ev-hora').value = '';
+        document.getElementById('ev-desc').value = '';
+        document.querySelectorAll('.ev-color-btn').forEach(b => b.style.border = '3px solid transparent');
+        const firstBtn = document.querySelector('.ev-color-btn[data-color="accent"]');
+        if (firstBtn) firstBtn.style.border = '3px solid white';
+        document.getElementById('modal-evento-title').textContent = 'Nuevo evento';
+        document.getElementById('modal-evento').classList.add('open');
+        setTimeout(() => document.getElementById('ev-titulo').focus(), 100);
+      }
+      function openEditEvento(id) {
+        const evs = loadEventos();
+        const ev = evs.find(e => e.id === id);
+        if (!ev) return;
+        editEventoId = id;
+        selectedEvColor = ev.color || 'accent';
+        document.getElementById('ev-titulo').value = ev.titulo;
+        document.getElementById('ev-fecha').value = ev.fecha;
+        document.getElementById('ev-hora').value = ev.hora || '';
+        document.getElementById('ev-desc').value = ev.desc || '';
+        document.querySelectorAll('.ev-color-btn').forEach(b => b.style.border = '3px solid transparent');
+        const activeBtn = document.querySelector(`.ev-color-btn[data-color="${selectedEvColor}"]`);
+        if (activeBtn) activeBtn.style.border = '3px solid white';
+        document.getElementById('modal-evento-title').textContent = 'Editar evento';
+        document.getElementById('modal-evento').classList.add('open');
+      }
+      function saveEvento() {
+        const titulo = document.getElementById('ev-titulo').value.trim();
+        const fecha = document.getElementById('ev-fecha').value;
+        if (!titulo || !fecha) return showToast('Título y fecha son obligatorios', 'error');
+        const evs = loadEventos();
+        if (editEventoId) {
+          const idx = evs.findIndex(e => e.id === editEventoId);
+          if (idx >= 0) {
+            evs[idx] = { ...evs[idx], titulo, fecha, hora: document.getElementById('ev-hora').value, desc: document.getElementById('ev-desc').value.trim(), color: selectedEvColor };
+          }
+          showToast('Evento actualizado', 'success');
+        } else {
+          evs.push({ id: Date.now(), titulo, fecha, hora: document.getElementById('ev-hora').value, desc: document.getElementById('ev-desc').value.trim(), color: selectedEvColor });
+          showToast('Evento guardado', 'success');
+        }
+        saveEventos(evs);
+        closeModal('modal-evento');
+        renderCalendario();
+      }
+      function eliminarEvento(id) {
+        if (!confirm('¿Eliminar este evento?')) return;
+        const evs = loadEventos().filter(e => e.id !== id);
+        saveEventos(evs);
+        showToast('Evento eliminado', 'success');
+        renderCalendario();
+      }
+      function calPrevMonth() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendario(); }
+      function calNextMonth() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendario(); }
+
+      function renderCalendario() {
+        const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        document.getElementById('cal-month-label').textContent = `${meses[calMonth]} ${calYear}`;
+
+        const evs = loadEventos();
+        const today = new Date().toISOString().split('T')[0];
+
+        // Build calendar grid
+        const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=sun
+        const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+        const startOffset = (firstDay + 6) % 7; // Mon-based
+
+        let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center">';
+        ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(d => {
+          html += `<div style="font-size:10px;font-family:var(--mono);color:var(--muted);padding:4px 2px;letter-spacing:0.04em">${d}</div>`;
+        });
+
+        // Empty cells before first day
+        for (let i = 0; i < startOffset; i++) html += '<div></div>';
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          const dayEvs = evs.filter(e => e.fecha === dateStr);
+          const isToday = dateStr === today;
+          const isPast = dateStr < today;
+
+          html += `<div onclick="openModalEvento('${dateStr}')" style="
+            border-radius:6px;padding:4px 2px;min-height:52px;cursor:pointer;position:relative;
+            background:${isToday ? 'var(--accent-dim)' : 'var(--surface2)'};
+            border:1px solid ${isToday ? 'var(--accent)' : 'var(--border)'};
+            opacity:${isPast && !dayEvs.length ? '0.45' : '1'};
+            transition:background 0.15s;
+          " onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='${isToday ? 'var(--accent-dim)' : 'var(--surface2)'}'">
+            <div style="font-size:12px;font-weight:${isToday ? '700' : '400'};color:${isToday ? 'var(--accent)' : 'var(--text)'};margin-bottom:2px">${day}</div>
+            ${dayEvs.slice(0, 3).map(ev => `
+              <div onclick="event.stopPropagation();openEditEvento(${ev.id})" style="
+                font-size:9px;border-radius:3px;padding:1px 4px;margin-bottom:1px;
+                background:${colorVars[ev.color] || colorVars.accent}22;
+                color:${colorVars[ev.color] || colorVars.accent};
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+                border-left:2px solid ${colorVars[ev.color] || colorVars.accent};
+                cursor:pointer;
+              " title="${ev.titulo}">${ev.hora ? ev.hora + ' ' : ''}${ev.titulo}</div>
+            `).join('')}
+            ${dayEvs.length > 3 ? `<div style="font-size:9px;color:var(--muted)">+${dayEvs.length - 3} más</div>` : ''}
+          </div>`;
+        }
+        html += '</div>';
+        document.getElementById('cal-grid').innerHTML = html;
+
+        // Upcoming events panel
+        const upcoming = evs
+          .filter(e => e.fecha >= today)
+          .sort((a, b) => (a.fecha + (a.hora||'00:00')).localeCompare(b.fecha + (b.hora||'00:00')))
+          .slice(0, 10);
+        const upEl = document.getElementById('cal-upcoming');
+        if (!upcoming.length) {
+          upEl.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">Sin eventos próximos</div>';
+        } else {
+          upEl.innerHTML = upcoming.map(ev => {
+            const d = new Date(ev.fecha + 'T12:00:00');
+            const label = d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+            const color = colorVars[ev.color] || colorVars.accent;
+            return `<div style="display:flex;gap:10px;align-items:flex-start;padding:8px;background:var(--surface2);border-radius:6px;border-left:3px solid ${color}">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ev.titulo}</div>
+                <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${label}${ev.hora ? ' · ' + ev.hora : ''}</div>
+                ${ev.desc ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${ev.desc}</div>` : ''}
+              </div>
+              <div style="display:flex;gap:4px;flex-shrink:0">
+                <button class="icon-btn" style="width:24px;height:24px;font-size:12px" onclick="openEditEvento(${ev.id})" title="Editar"><i class="ti ti-edit"></i></button>
+                <button class="icon-btn danger" style="width:24px;height:24px;font-size:12px" onclick="eliminarEvento(${ev.id})" title="Eliminar"><i class="ti ti-trash"></i></button>
+              </div>
+            </div>`;
+          }).join('');
         }
       }
 
