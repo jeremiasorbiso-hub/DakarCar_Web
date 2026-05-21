@@ -7,14 +7,12 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Helper para calcular días transcurridos
 function diasDesde(fecha) {
   if (!fecha) return 0;
   const hoy = new Date();
@@ -28,20 +26,14 @@ app.get('/api/clientes', async (req, res) => {
     .from('clientes')
     .select('*, vehiculos(id)')
     .order('nombre');
-  
   if (error) return res.status(500).json({ error: error.message });
-  
-  const result = data.map(c => ({
-    ...c,
-    total_vehiculos: c.vehiculos ? c.vehiculos.length : 0
-  }));
+  const result = data.map(c => ({ ...c, total_vehiculos: c.vehiculos ? c.vehiculos.length : 0 }));
   res.json(result);
 });
 
 app.get('/api/clientes/:id', async (req, res) => {
   const { data: cliente, error: errCli } = await supabase.from('clientes').select('*').eq('id', req.params.id).single();
   if (errCli) return res.status(404).json({ error: 'Cliente no encontrado' });
-  
   const { data: vehiculos } = await supabase.from('vehiculos').select('*').eq('cliente_id', req.params.id).order('creado_en', { ascending: false });
   res.json({ ...cliente, vehiculos: vehiculos || [] });
 });
@@ -65,13 +57,10 @@ app.get('/api/vehiculos', async (req, res) => {
     .from('vehiculos')
     .select('*, clientes(nombre, telefono)')
     .order('creado_en', { ascending: false });
-
   if (estado) query = query.eq('estado', estado);
   if (q) query = query.or(`patente.ilike.%${q}%,modelo.ilike.%${q}%`);
-
   const { data, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
-
   const result = data.map(v => ({
     ...v,
     cliente_nombre: v.clientes?.nombre,
@@ -87,15 +76,12 @@ app.get('/api/vehiculos/:id', async (req, res) => {
     .select('*, clientes(nombre, telefono, email)')
     .eq('id', req.params.id)
     .single();
-
   if (error) return res.status(404).json({ error: 'Vehículo no encontrado' });
-
   const { data: novedades } = await supabase
     .from('novedades')
     .select('*')
     .eq('vehiculo_id', req.params.id)
     .order('creado_en', { ascending: false });
-
   res.json({
     ...vehiculo,
     cliente_nombre: vehiculo.clientes?.nombre,
@@ -122,13 +108,13 @@ app.put('/api/vehiculos/:id', async (req, res) => {
 
 // --- API NOVEDADES ---
 app.post('/api/novedades', async (req, res) => {
-  const { vehiculo_id, tipo, titulo, descripcion, recordatorio_fecha } = req.body;
-  
+  const { vehiculo_id, tipo } = req.body;
+
   const { data: nov, error } = await supabase.from('novedades').insert([req.body]).select().single();
   if (error) return res.status(400).json({ error: error.message });
 
-  // Lógica de seguimiento automático: crear alerta en 2 días hábiles
-  if (tipo === 'seguimiento') {
+  // Seguimiento: crear recordatorio automático en 2 días hábiles si no pusieron fecha
+  if (tipo === 'seguimiento' && !req.body.recordatorio_fecha) {
     const hoy = new Date();
     let diasHabiles = 0;
     let fecha = new Date(hoy);
@@ -136,14 +122,12 @@ app.post('/api/novedades', async (req, res) => {
       fecha.setDate(fecha.getDate() + 1);
       if (fecha.getDay() !== 0 && fecha.getDay() !== 6) diasHabiles++;
     }
-    
     const { data: veh } = await supabase.from('vehiculos').select('patente, aseguradora').eq('id', vehiculo_id).single();
-    
     await supabase.from('novedades').insert([{
       vehiculo_id,
       tipo: 'alerta',
       titulo: `${veh?.patente || 'Vehículo'} — Reintentar con aseguradora`,
-      descripcion: `Recordatorio: reintentar contacto con ${veh?.aseguradora || 'la aseguradora'}. Sin denuncia registrada.`,
+      descripcion: `Recordatorio: reintentar contacto con ${veh?.aseguradora || 'la aseguradora'}.`,
       recordatorio_fecha: fecha.toISOString().split('T')[0]
     }]);
   }
@@ -157,13 +141,10 @@ app.get('/api/novedades', async (req, res) => {
     .from('novedades')
     .select('*, vehiculos(patente, modelo, aseguradora)')
     .order('creado_en', { ascending: false });
-
   if (tipo) query = query.eq('tipo', tipo);
   if (leida === 'true' || leida === 'false') query = query.eq('leida', leida === 'true');
-
   const { data, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
-
   res.json(data || []);
 });
 
@@ -178,10 +159,17 @@ app.put('/api/novedades/leer-todas', async (req, res) => {
   res.json({ ok: true });
 });
 
+// ✅ DELETE novedad — endpoint que faltaba
+app.delete('/api/novedades/:id', async (req, res) => {
+  const { error } = await supabase.from('novedades').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).send();
+});
+
 // --- DASHBOARD ---
 app.get('/api/dashboard', async (req, res) => {
   const hoy = new Date().toISOString().split('T')[0];
-  
+
   const [enTaller, esperando, listos, alertas, noLeidas, recientes] = await Promise.all([
     supabase.from('vehiculos').select('*', { count: 'exact', head: true }).neq('estado', 'entregado').eq('en_taller', 'si'),
     supabase.from('vehiculos').select('*', { count: 'exact', head: true }).eq('estado', 'esperando_seguro'),
@@ -191,12 +179,38 @@ app.get('/api/dashboard', async (req, res) => {
     supabase.from('vehiculos').select('*, clientes(nombre)').order('creado_en', { ascending: false }).limit(8)
   ]);
 
-  const { data: recordatorios } = await supabase
+  // Novedades que deben aparecer en el dashboard:
+  // 1. Alertas no leídas (siempre, sin importar fecha)
+  // 2. Cualquier novedad con recordatorio_fecha <= hoy (vencida o de hoy) y no leída
+  // 3. Cualquier novedad con recordatorio_fecha en el futuro que no esté leída (aparece hasta esa fecha)
+  const { data: alertasDirectas } = await supabase
     .from('novedades')
-    .select('*, vehiculos(patente, modelo, aseguradora)')
-    .lte('recordatorio_fecha', hoy)
+    .select('*, vehiculos(patente, modelo)')
+    .eq('tipo', 'alerta')
+    .eq('leida', false)
+    .order('creado_en', { ascending: false });
+
+  const { data: conRecordatorio } = await supabase
+    .from('novedades')
+    .select('*, vehiculos(patente, modelo)')
+    .neq('tipo', 'alerta')          // alertas ya las tenemos arriba
+    .not('recordatorio_fecha', 'is', null)
+    .lte('recordatorio_fecha', hoy) // recordatorio que ya llegó (hoy o antes)
     .eq('leida', false)
     .order('recordatorio_fecha', { ascending: true });
+
+  const { data: conRecordatorioFuturo } = await supabase
+    .from('novedades')
+    .select('*, vehiculos(patente, modelo)')
+    .not('recordatorio_fecha', 'is', null)
+    .gt('recordatorio_fecha', hoy)  // recordatorio futuro — mostrar hasta esa fecha
+    .eq('leida', false)
+    .order('recordatorio_fecha', { ascending: true });
+
+  // Combinar y deduplicar por id
+  const todos = [...(alertasDirectas || []), ...(conRecordatorio || []), ...(conRecordatorioFuturo || [])];
+  const seen = new Set();
+  const dashAlertas = todos.filter(n => { if (seen.has(n.id)) return false; seen.add(n.id); return true; });
 
   res.json({
     stats: {
@@ -206,7 +220,7 @@ app.get('/api/dashboard', async (req, res) => {
       alertas: alertas.count || 0,
       no_leidas: noLeidas.count || 0
     },
-    alertas: recordatorios || [],
+    alertas: dashAlertas,
     recientes: (recientes.data || []).map(v => ({
       ...v,
       cliente_nombre: v.clientes?.nombre,

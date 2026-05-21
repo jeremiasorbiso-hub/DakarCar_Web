@@ -1873,23 +1873,66 @@
       <div class="stat-card"><div class="stat-label"><i class="ti ti-alert-triangle"></i> ALERTAS ACTIVAS</div><div class="stat-val" style="color:var(--red)">${stats.alertas}</div></div>
     `;
 
+          const hoyStr = new Date().toISOString().split('T')[0];
+
+          // Mostrar cartel especial si alguna novedad tiene recordatorio HOY exacto
+          const recordatoriosHoy = alertas.filter(a => a.recordatorio_fecha === hoyStr);
+          if (recordatoriosHoy.length > 0) {
+            const bannerEl = document.getElementById('dash-recordatorio-hoy');
+            if (!bannerEl) {
+              const banner = document.createElement('div');
+              banner.id = 'dash-recordatorio-hoy';
+              banner.style.cssText = 'margin-bottom:12px;padding:14px 18px;background:rgba(232,197,71,0.12);border:1px solid rgba(232,197,71,0.4);border-radius:8px;display:flex;align-items:flex-start;gap:12px';
+              banner.innerHTML = `
+                <i class="ti ti-bell-ringing" style="font-size:22px;color:var(--accent);flex-shrink:0;margin-top:1px"></i>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:4px">
+                    📅 Recordatorio${recordatoriosHoy.length > 1 ? 's' : ''} para hoy
+                  </div>
+                  ${recordatoriosHoy.map(a => `
+                    <div style="font-size:12px;color:var(--text);margin-bottom:2px">
+                      · ${a.titulo} ${a.vehiculos?.patente ? `<span style="color:var(--muted);font-family:var(--mono)">(${a.vehiculos.patente})</span>` : ''}
+                    </div>`).join('')}
+                </div>
+                <button class="icon-btn" style="flex-shrink:0" onclick="this.closest('#dash-recordatorio-hoy').remove()" title="Cerrar"><i class="ti ti-x"></i></button>
+              `;
+              document.getElementById('dash-alerts').before(banner);
+            }
+          }
+
+          const colorDot = { alerta: 'var(--red)', seguimiento: 'var(--orange)', info: 'var(--blue)', ok: 'var(--green)' };
+          const iconMap = { alerta: 'ti-alert-triangle', seguimiento: 'ti-phone-call', info: 'ti-info-circle', ok: 'ti-check' };
+
           document.getElementById('dash-alerts').innerHTML =
             alertas.length === 0
-              ? '<div class="empty-state"><i class="ti ti-circle-check"></i><div>Sin alertas activas</div><div style="font-size:11px;margin-top:4px;color:var(--muted)">Las alertas aparecen aquí cuando agregás una novedad de tipo "Alerta / urgente"</div></div>'
+              ? '<div class="empty-state"><i class="ti ti-circle-check"></i><div>Sin alertas ni recordatorios activos</div><div style="font-size:11px;margin-top:4px;color:var(--muted)">Aparecen aquí las alertas urgentes y las novedades con recordatorio</div></div>'
               : alertas
-                  .map(
-                    (a) => `
-          <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)">
-            <div class="dot" style="background:${a.tipo === 'alerta' ? 'var(--red)' : 'var(--orange)'}"></div>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:500">${a.titulo}</div>
-              <div style="font-size:12px;color:var(--muted)">${a.descripcion}</div>
+                  .map(a => {
+                    const esHoy = a.recordatorio_fecha === hoyStr;
+                    const esFuturo = a.recordatorio_fecha && a.recordatorio_fecha > hoyStr;
+                    const recordLabel = a.recordatorio_fecha
+                      ? `<span style="font-size:10px;font-family:var(--mono);color:${esHoy ? 'var(--accent)' : 'var(--muted)'}">
+                          <i class="ti ti-calendar" style="font-size:10px"></i>
+                          ${esHoy ? '📅 HOY' : esFuturo ? 'hasta ' + a.recordatorio_fecha : 'vencido ' + a.recordatorio_fecha}
+                        </span>` : '';
+                    return `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);${esHoy ? 'background:rgba(232,197,71,0.05)' : ''}">
+            <div style="width:8px;height:8px;border-radius:50%;background:${colorDot[a.tipo] || 'var(--muted)'};flex-shrink:0"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                ${a.titulo}
+                ${esHoy ? '<span style="font-size:10px;padding:2px 6px;background:var(--accent-dim);color:var(--accent);border-radius:4px;font-family:var(--mono)">HOY</span>' : ''}
+              </div>
+              ${a.descripcion ? `<div style="font-size:12px;color:var(--muted);margin-top:1px">${a.descripcion}</div>` : ''}
+              <div style="margin-top:3px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                ${recordLabel}
+                ${a.vehiculos?.patente ? `<span style="font-size:10px;font-family:var(--mono);color:var(--muted)">${a.vehiculos.patente}</span>` : ''}
+              </div>
             </div>
-            <span style="font-size:11px;font-family:var(--mono);color:var(--muted);white-space:nowrap">${fmtFecha(a.creado_en)}</span>
-            ${a.vehiculo_id ? `<button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" onclick="openDetalle(${a.vehiculo_id})">Ver</button>` : ''}
-            <button class="icon-btn" title="Marcar leída" onclick="marcarLeida(${a.id})"><i class="ti ti-check"></i></button>
-          </div>`
-                  )
+            ${a.vehiculo_id ? `<button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;flex-shrink:0" onclick="openDetalle(${a.vehiculo_id})">Ver</button>` : ''}
+            <button class="icon-btn" style="flex-shrink:0" title="Marcar leída" onclick="marcarLeida(${a.id})"><i class="ti ti-check"></i></button>
+          </div>`;
+                  })
                   .join('');
 
           document.getElementById('dash-recent').innerHTML =
