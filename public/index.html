@@ -1050,6 +1050,7 @@
       .stock-cat-name {
         font-size: 14px;
         font-weight: 600;
+        text-transform: uppercase;
       }
       .stock-cat-count {
         font-size: 11px;
@@ -1075,24 +1076,26 @@
       .stock-item-row {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         padding: 8px 16px 8px 32px;
         border-bottom: 1px solid var(--border);
         font-size: 13px;
+        flex-wrap: wrap;
       }
       .stock-item-row:last-child {
         border-bottom: none;
       }
-      .stock-item-dot {
-        width: 5px;
-        height: 5px;
+      .stock-item-color-dot {
+        width: 9px;
+        height: 9px;
         border-radius: 50%;
-        background: var(--accent);
         flex-shrink: 0;
+        border: 1px solid rgba(255,255,255,0.2);
       }
       .stock-item-name {
         flex: 1;
-        min-width: 0;
+        min-width: 120px;
+        text-transform: uppercase;
       }
       .stock-item-qty {
         font-family: var(--mono);
@@ -1100,13 +1103,18 @@
         color: var(--accent);
         white-space: nowrap;
       }
+      .stock-item-qty.low-stock {
+        color: var(--red);
+        font-weight: 600;
+      }
       .stock-item-notas {
         font-size: 11px;
         color: var(--muted);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 160px;
+        max-width: 140px;
+        text-transform: uppercase;
       }
       .stock-add-item {
         display: flex;
@@ -1121,6 +1129,86 @@
       .stock-add-item:hover {
         color: var(--accent);
       }
+      .btn-stock-add {
+        padding: 4px 9px;
+        border-radius: 5px;
+        font-size: 11px;
+        border: 1px solid rgba(76,175,125,0.35);
+        background: var(--green-dim);
+        color: var(--green);
+        cursor: pointer;
+        font-family: var(--sans);
+        font-weight: 600;
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+      .btn-stock-add:hover { background: rgba(76,175,125,0.18); }
+      .btn-stock-sub {
+        padding: 4px 9px;
+        border-radius: 5px;
+        font-size: 11px;
+        border: 1px solid rgba(226,75,74,0.35);
+        background: var(--red-dim);
+        color: var(--red);
+        cursor: pointer;
+        font-family: var(--sans);
+        font-weight: 600;
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+      .btn-stock-sub:hover { background: rgba(226,75,74,0.18); }
+      .stock-order-btns {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+      .stock-order-btn {
+        width: 20px;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 3px;
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 10px;
+        transition: all 0.15s;
+        line-height: 1;
+      }
+      .stock-order-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-dim);
+      }
+      .stock-order-btn:disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+      }
+      .stock-log-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .stock-log-table th {
+        font-size: 10px;
+        padding: 8px 12px;
+        min-width: unset;
+      }
+      .stock-log-table td {
+        padding: 9px 12px;
+        font-size: 12px;
+      }
+      .stock-log-ingreso { color: var(--green); font-weight: 600; }
+      .stock-log-retiro  { color: var(--red);   font-weight: 600; }
+      .modal-xs { width: 380px; }
+      .item-color-picker { display:flex; gap:8px; flex-wrap:wrap; margin-top:2px; }
+      .item-color-btn {
+        width:28px; height:28px; border-radius:50%; cursor:pointer;
+        border: 3px solid transparent; transition: border-color 0.15s;
+      }
+      .item-color-btn.selected { border-color: white !important; }
     </style>
   </head>
   <body>
@@ -1431,9 +1519,14 @@
               <div class="page-title">Stock de materiales</div>
               <div class="page-sub">Inventario por categoría</div>
             </div>
-            <button class="btn btn-primary" onclick="openModalStockCategoria()">
-              <i class="ti ti-plus"></i> Nueva categoría
-            </button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost" onclick="openStockLog()">
+                <i class="ti ti-history"></i> Ver historial
+              </button>
+              <button class="btn btn-primary" onclick="openModalStockCategoria()">
+                <i class="ti ti-plus"></i> Nueva categoría
+              </button>
+            </div>
           </div>
           <div id="stock-list" style="display:flex;flex-direction:column;gap:10px">
             <div class="loading">Cargando...</div>
@@ -1730,24 +1823,101 @@
         <div class="modal-body">
           <div class="fg">
             <label>NOMBRE / DESCRIPCIÓN *</label>
-            <input id="sitem-nombre" placeholder="Ej: Lija 120, Aceite 10W40..." />
+            <input id="sitem-nombre" placeholder="Ej: Lija 120, Aceite 10W40..." style="text-transform:uppercase" />
           </div>
-          <div class="fg">
-            <label>CANTIDAD</label>
-            <input id="sitem-cantidad" type="number" min="0" placeholder="0" />
-          </div>
-          <div class="fg">
-            <label>UNIDAD (opcional)</label>
-            <input id="sitem-unidad" placeholder="unidades, litros, kg, packs..." />
+          <div class="form-grid">
+            <div class="fg">
+              <label>CANTIDAD</label>
+              <input id="sitem-cantidad" type="number" min="0" placeholder="0" />
+            </div>
+            <div class="fg">
+              <label>STOCK MÍNIMO</label>
+              <input id="sitem-minimo" type="number" min="0" placeholder="0" />
+            </div>
           </div>
           <div class="fg">
             <label>NOTAS (opcional)</label>
-            <input id="sitem-notas" placeholder="Proveedor, código, etc." />
+            <input id="sitem-notas" placeholder="Proveedor, código, etc." style="text-transform:uppercase" />
+          </div>
+          <div class="fg">
+            <label>COLOR DEL ÍTEM</label>
+            <div class="item-color-picker" id="sitem-color-picker">
+              <button type="button" class="item-color-btn selected" data-color="accent" style="background:var(--accent)" onclick="selectItemColor('accent',this)"></button>
+              <button type="button" class="item-color-btn" data-color="blue"   style="background:var(--blue)"   onclick="selectItemColor('blue',this)"></button>
+              <button type="button" class="item-color-btn" data-color="green"  style="background:var(--green)"  onclick="selectItemColor('green',this)"></button>
+              <button type="button" class="item-color-btn" data-color="red"    style="background:var(--red)"    onclick="selectItemColor('red',this)"></button>
+              <button type="button" class="item-color-btn" data-color="orange" style="background:var(--orange)" onclick="selectItemColor('orange',this)"></button>
+            </div>
           </div>
         </div>
         <div class="modal-foot">
           <button class="btn btn-ghost" onclick="closeModal('modal-stock-item')">Cancelar</button>
           <button class="btn btn-primary" onclick="saveStockItem()"><i class="ti ti-device-floppy"></i> Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal movimiento rápido: Sumar -->
+    <div class="overlay" id="modal-stock-sumar" onclick="overlayClose(event,'modal-stock-sumar')">
+      <div class="modal modal-xs">
+        <div class="modal-head">
+          <div class="modal-title"><i class="ti ti-plus" style="color:var(--green)"></i> Ingreso de stock</div>
+          <button class="icon-btn" onclick="closeModal('modal-stock-sumar')"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div id="sumar-item-info" style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--accent);margin-bottom:4px"></div>
+          <div class="fg">
+            <label>CANTIDAD A INGRESAR</label>
+            <input id="sumar-cantidad" type="number" min="1" placeholder="1" />
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-stock-sumar')">Cancelar</button>
+          <button class="btn btn-primary" onclick="confirmSumar()"><i class="ti ti-plus"></i> Confirmar ingreso</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal movimiento rápido: Retirar -->
+    <div class="overlay" id="modal-stock-retirar" onclick="overlayClose(event,'modal-stock-retirar')">
+      <div class="modal modal-xs">
+        <div class="modal-head">
+          <div class="modal-title"><i class="ti ti-minus" style="color:var(--red)"></i> Retiro de stock</div>
+          <button class="icon-btn" onclick="closeModal('modal-stock-retirar')"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div id="retirar-item-info" style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--red);margin-bottom:4px"></div>
+          <div class="fg">
+            <label>CANTIDAD A RETIRAR</label>
+            <input id="retirar-cantidad" type="number" min="1" placeholder="1" />
+          </div>
+          <div class="fg">
+            <label>EMPLEADO QUE RETIRA</label>
+            <select id="retirar-empleado">
+              <option value="">— Seleccionar empleado —</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-stock-retirar')">Cancelar</button>
+          <button class="btn btn-primary" style="background:var(--red);color:#fff" onclick="confirmRetirar()"><i class="ti ti-minus"></i> Confirmar retiro</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal historial de movimientos -->
+    <div class="overlay" id="modal-stock-log" onclick="overlayClose(event,'modal-stock-log')">
+      <div class="modal" style="width:760px">
+        <div class="modal-head">
+          <div class="modal-title"><i class="ti ti-history"></i> Historial de movimientos</div>
+          <button class="icon-btn" onclick="closeModal('modal-stock-log')"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="modal-body" style="padding:0">
+          <div id="stock-log-body" style="padding:16px"></div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-stock-log')">Cerrar</button>
+          <button class="btn btn-ghost" style="color:var(--red)" onclick="clearStockLog()"><i class="ti ti-trash"></i> Borrar historial</button>
         </div>
       </div>
     </div>
@@ -1934,6 +2104,34 @@
           </div>`;
                   })
                   .join('');
+
+          // ── Alertas de stock mínimo ────────────────────────────────────────────
+          const stockCats = loadStock();
+          const lowStockItems = [];
+          stockCats.forEach(cat => {
+            (cat.items || []).forEach(item => {
+              const qty = Number(item.cantidad);
+              const min = Number(item.stockMinimo) || 0;
+              if (item.cantidad !== '' && item.cantidad !== null && !isNaN(qty) && min > 0 && qty <= min) {
+                lowStockItems.push(item.nombre);
+              }
+            });
+          });
+          if (lowStockItems.length > 0) {
+            const dashAlerts = document.getElementById('dash-alerts');
+            // Remove empty-state if present
+            const emptyEl = dashAlerts.querySelector('.empty-state');
+            if (emptyEl) dashAlerts.innerHTML = '';
+            lowStockItems.forEach(nombre => {
+              const row = document.createElement('div');
+              row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);background:rgba(226,75,74,0.05)';
+              row.innerHTML = `
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></div>
+                <div style="flex:1;font-size:13px;font-weight:500;color:var(--red)">🔴 POCO STOCK DE ${nombre}</div>
+                <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;flex-shrink:0" onclick="goPage('stock')"><i class="ti ti-package"></i> Ver stock</button>`;
+              dashAlerts.appendChild(row);
+            });
+          }
 
           document.getElementById('dash-recent').innerHTML =
             recientes
@@ -2463,16 +2661,44 @@
       }
 
       // ── STOCK (localStorage) ──────────────────────────────────────────────────
-      const STOCK_KEY = 'taller_stock_v1';
-      let _stockEditCatId = null;
+      const STOCK_KEY    = 'taller_stock_v1';
+      const STOCK_LOG_KEY = 'taller_stock_log_v1';
+      let _stockEditCatId    = null;
       let _stockAddItemCatId = null;
-      let _stockEditItemId = null;
+      let _stockEditItemId   = null;
+      let _stockMovCatId     = null;
+      let _stockMovItemId    = null;
+      let _selectedItemColor = 'accent';
+
+      const EMPLEADOS = ['JUAN', 'PEDRO', 'GUSTI', 'MARIO', 'LUCAS'];
+      const colorVarsStock = { accent:'#e8c547', blue:'#4a9ee8', green:'#4caf7d', red:'#e24b4a', orange:'#e8904a' };
 
       function loadStock() {
         try { return JSON.parse(localStorage.getItem(STOCK_KEY) || '[]'); } catch { return []; }
       }
       function saveStock(data) {
         localStorage.setItem(STOCK_KEY, JSON.stringify(data));
+      }
+      function loadStockLog() {
+        try { return JSON.parse(localStorage.getItem(STOCK_LOG_KEY) || '[]'); } catch { return []; }
+      }
+      function saveStockLog(log) {
+        localStorage.setItem(STOCK_LOG_KEY, JSON.stringify(log));
+      }
+      function addStockLogEntry(tipo, itemNombre, cantidad, empleado) {
+        const log = loadStockLog();
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2,'0');
+        const mm = String(now.getMinutes()).padStart(2,'0');
+        const fecha = now.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+        log.unshift({ id: Date.now(), tipo, fecha, hora: `${hh}:${mm}`, item: itemNombre, cantidad: Number(cantidad), empleado: empleado || '' });
+        saveStockLog(log);
+      }
+
+      function fmtQty(cantidad) {
+        const n = Number(cantidad);
+        if (isNaN(n) || cantidad === '' || cantidad === null) return '';
+        return n === 1 ? '1 UNIDAD' : `${n} UNIDADES`;
       }
 
       function renderStock() {
@@ -2482,12 +2708,18 @@
           el.innerHTML = '<div class="empty-state"><i class="ti ti-package"></i><div>Sin categorías</div><div style="font-size:11px;margin-top:4px">Agregá una categoría para empezar a registrar materiales.</div></div>';
           return;
         }
-        el.innerHTML = cats.map(cat => {
+        el.innerHTML = cats.map((cat, catIdx) => {
           const items = cat.items || [];
+          const isFirst = catIdx === 0;
+          const isLast  = catIdx === cats.length - 1;
           return `
           <div class="stock-categoria" id="stock-cat-${cat.id}">
             <div class="stock-cat-header" onclick="toggleStockCat(${cat.id})">
               <div class="stock-cat-header-left">
+                <div class="stock-order-btns" onclick="event.stopPropagation()">
+                  <button class="stock-order-btn" title="Subir categoría" ${isFirst ? 'disabled' : ''} onclick="moveStockCat(${cat.id},-1)">⬆</button>
+                  <button class="stock-order-btn" title="Bajar categoría" ${isLast  ? 'disabled' : ''} onclick="moveStockCat(${cat.id}, 1)">⬇</button>
+                </div>
                 <i class="ti ti-chevron-right stock-cat-chevron" id="stock-chev-${cat.id}"></i>
                 <span class="stock-cat-name">${cat.nombre}</span>
                 <span class="stock-cat-count">${items.length} ítem${items.length !== 1 ? 's' : ''}</span>
@@ -2498,18 +2730,25 @@
               </div>
             </div>
             <div class="stock-items" id="stock-items-${cat.id}">
-              ${items.map(item => `
+              ${items.map(item => {
+                const n = Number(item.cantidad);
+                const min = Number(item.stockMinimo) || 0;
+                const isLow = item.cantidad !== '' && item.cantidad !== null && !isNaN(n) && min > 0 && n <= min;
+                const dotColor = colorVarsStock[item.color] || colorVarsStock.accent;
+                return `
                 <div class="stock-item-row">
-                  <div class="stock-item-dot"></div>
+                  <div class="stock-item-color-dot" style="background:${dotColor}"></div>
                   <div class="stock-item-name">${item.nombre}</div>
-                  ${(item.cantidad !== null && item.cantidad !== '') ? `<span class="stock-item-qty">${item.cantidad}${item.unidad ? ' ' + item.unidad : ''}</span>` : ''}
+                  ${(item.cantidad !== null && item.cantidad !== '') ? `<span class="stock-item-qty${isLow?' low-stock':''}">${fmtQty(item.cantidad)}${isLow?' ⚠️':''}</span>` : ''}
                   ${item.notas ? `<span class="stock-item-notas">${item.notas}</span>` : ''}
-                  <div style="display:flex;gap:4px;margin-left:auto">
-                    <button class="icon-btn" style="width:24px;height:24px;font-size:11px" title="Editar" onclick="openEditStockItem(${cat.id}, ${item.id})"><i class="ti ti-edit"></i></button>
-                    <button class="icon-btn danger" style="width:24px;height:24px;font-size:11px" title="Eliminar" onclick="deleteStockItem(${cat.id}, ${item.id})"><i class="ti ti-trash"></i></button>
+                  <div style="display:flex;gap:5px;margin-left:auto;flex-wrap:nowrap;align-items:center">
+                    <button class="btn-stock-add" onclick="openSumar(${cat.id},${item.id})" title="Sumar stock"><i class="ti ti-plus" style="font-size:10px"></i> Sumar</button>
+                    <button class="btn-stock-sub" onclick="openRetirar(${cat.id},${item.id})" title="Retirar stock"><i class="ti ti-minus" style="font-size:10px"></i> Retirar</button>
+                    <button class="icon-btn" style="width:24px;height:24px;font-size:11px" title="Editar" onclick="openEditStockItem(${cat.id},${item.id})"><i class="ti ti-edit"></i></button>
+                    <button class="icon-btn danger" style="width:24px;height:24px;font-size:11px" title="Eliminar" onclick="deleteStockItem(${cat.id},${item.id})"><i class="ti ti-trash"></i></button>
                   </div>
-                </div>
-              `).join('')}
+                </div>`;
+              }).join('')}
               <div class="stock-add-item" onclick="openModalStockItem(${cat.id})">
                 <i class="ti ti-plus" style="font-size:13px"></i> Agregar ítem
               </div>
@@ -2520,9 +2759,22 @@
 
       function toggleStockCat(id) {
         const items = document.getElementById(`stock-items-${id}`);
-        const chev = document.getElementById(`stock-chev-${id}`);
+        const chev  = document.getElementById(`stock-chev-${id}`);
         items.classList.toggle('open');
         chev.classList.toggle('open');
+      }
+
+      function moveStockCat(id, dir) {
+        const cats = loadStock();
+        const idx = cats.findIndex(c => c.id === id);
+        if (idx < 0) return;
+        const newIdx = idx + dir;
+        if (newIdx < 0 || newIdx >= cats.length) return;
+        const tmp = cats[idx];
+        cats[idx] = cats[newIdx];
+        cats[newIdx] = tmp;
+        saveStock(cats);
+        renderStock();
       }
 
       function openModalStockCategoria() {
@@ -2545,7 +2797,7 @@
       }
 
       function saveStockCategoria() {
-        const nombre = document.getElementById('scat-nombre').value.trim();
+        const nombre = document.getElementById('scat-nombre').value.trim().toUpperCase();
         if (!nombre) return showToast('El nombre es obligatorio', 'error');
         const cats = loadStock();
         if (_stockEditCatId) {
@@ -2571,59 +2823,73 @@
         renderStock();
       }
 
+      function selectItemColor(color, btn) {
+        _selectedItemColor = color;
+        document.querySelectorAll('.item-color-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      }
+
       function openModalStockItem(catId) {
         _stockAddItemCatId = catId;
-        _stockEditItemId = null;
+        _stockEditItemId   = null;
+        _selectedItemColor = 'accent';
         document.getElementById('modal-stock-item-title').textContent = 'Agregar ítem';
-        document.getElementById('sitem-nombre').value = '';
+        document.getElementById('sitem-nombre').value   = '';
         document.getElementById('sitem-cantidad').value = '';
-        document.getElementById('sitem-unidad').value = '';
-        document.getElementById('sitem-notas').value = '';
+        document.getElementById('sitem-minimo').value   = '';
+        document.getElementById('sitem-notas').value    = '';
+        document.querySelectorAll('.item-color-btn').forEach(b => b.classList.remove('selected'));
+        const accentBtn = document.querySelector('.item-color-btn[data-color="accent"]');
+        if (accentBtn) accentBtn.classList.add('selected');
         document.getElementById('modal-stock-item').classList.add('open');
         setTimeout(() => document.getElementById('sitem-nombre').focus(), 100);
       }
 
       function openEditStockItem(catId, itemId) {
         const cats = loadStock();
-        const cat = cats.find(c => c.id === catId);
+        const cat  = cats.find(c => c.id === catId);
         if (!cat) return;
         const item = cat.items.find(i => i.id === itemId);
         if (!item) return;
         _stockAddItemCatId = catId;
-        _stockEditItemId = itemId;
+        _stockEditItemId   = itemId;
+        _selectedItemColor = item.color || 'accent';
         document.getElementById('modal-stock-item-title').textContent = 'Editar ítem';
-        document.getElementById('sitem-nombre').value = item.nombre;
+        document.getElementById('sitem-nombre').value   = item.nombre;
         document.getElementById('sitem-cantidad').value = item.cantidad || '';
-        document.getElementById('sitem-unidad').value = item.unidad || '';
-        document.getElementById('sitem-notas').value = item.notas || '';
+        document.getElementById('sitem-minimo').value   = item.stockMinimo || '';
+        document.getElementById('sitem-notas').value    = item.notas || '';
+        document.querySelectorAll('.item-color-btn').forEach(b => b.classList.remove('selected'));
+        const activeBtn = document.querySelector(`.item-color-btn[data-color="${_selectedItemColor}"]`);
+        if (activeBtn) activeBtn.classList.add('selected');
         document.getElementById('modal-stock-item').classList.add('open');
         setTimeout(() => document.getElementById('sitem-nombre').focus(), 100);
       }
 
       function saveStockItem() {
-        const nombre = document.getElementById('sitem-nombre').value.trim();
+        const nombre      = document.getElementById('sitem-nombre').value.trim().toUpperCase();
         if (!nombre) return showToast('El nombre es obligatorio', 'error');
-        const cantidad = document.getElementById('sitem-cantidad').value;
-        const unidad = document.getElementById('sitem-unidad').value.trim();
-        const notas = document.getElementById('sitem-notas').value.trim();
+        const cantidad    = document.getElementById('sitem-cantidad').value;
+        const stockMinimo = document.getElementById('sitem-minimo').value;
+        const notas       = document.getElementById('sitem-notas').value.trim().toUpperCase();
+        const color       = _selectedItemColor;
         const cats = loadStock();
         const catIdx = cats.findIndex(c => c.id === _stockAddItemCatId);
         if (catIdx < 0) return;
         if (_stockEditItemId) {
           const itemIdx = cats[catIdx].items.findIndex(i => i.id === _stockEditItemId);
-          if (itemIdx >= 0) cats[catIdx].items[itemIdx] = { ...cats[catIdx].items[itemIdx], nombre, cantidad, unidad, notas };
+          if (itemIdx >= 0) cats[catIdx].items[itemIdx] = { ...cats[catIdx].items[itemIdx], nombre, cantidad, stockMinimo, notas, color };
           showToast('Ítem actualizado', 'success');
         } else {
-          cats[catIdx].items.push({ id: Date.now(), nombre, cantidad, unidad, notas });
+          cats[catIdx].items.push({ id: Date.now(), nombre, cantidad, stockMinimo, notas, color });
           showToast('Ítem agregado', 'success');
         }
         saveStock(cats);
         closeModal('modal-stock-item');
         renderStock();
-        // Keep the category open
         setTimeout(() => {
           const items = document.getElementById(`stock-items-${_stockAddItemCatId}`);
-          const chev = document.getElementById(`stock-chev-${_stockAddItemCatId}`);
+          const chev  = document.getElementById(`stock-chev-${_stockAddItemCatId}`);
           if (items && !items.classList.contains('open')) { items.classList.add('open'); chev && chev.classList.add('open'); }
         }, 50);
       }
@@ -2639,9 +2905,117 @@
         renderStock();
         setTimeout(() => {
           const items = document.getElementById(`stock-items-${catId}`);
-          const chev = document.getElementById(`stock-chev-${catId}`);
+          const chev  = document.getElementById(`stock-chev-${catId}`);
           if (items && !items.classList.contains('open')) { items.classList.add('open'); chev && chev.classList.add('open'); }
         }, 50);
+      }
+
+      // ── Movimientos rápidos ────────────────────────────────────────────────────
+      function openSumar(catId, itemId) {
+        _stockMovCatId  = catId;
+        _stockMovItemId = itemId;
+        const cats = loadStock();
+        const cat  = cats.find(c => c.id === catId);
+        const item = cat?.items.find(i => i.id === itemId);
+        if (!item) return;
+        document.getElementById('sumar-item-info').textContent = item.nombre;
+        document.getElementById('sumar-cantidad').value = '';
+        document.getElementById('modal-stock-sumar').classList.add('open');
+        setTimeout(() => document.getElementById('sumar-cantidad').focus(), 100);
+      }
+
+      function confirmSumar() {
+        const qty = parseInt(document.getElementById('sumar-cantidad').value, 10);
+        if (!qty || qty < 1) return showToast('Ingresá una cantidad válida', 'error');
+        const cats = loadStock();
+        const catIdx  = cats.findIndex(c => c.id === _stockMovCatId);
+        const itemIdx = cats[catIdx]?.items.findIndex(i => i.id === _stockMovItemId);
+        if (catIdx < 0 || itemIdx < 0) return;
+        const item = cats[catIdx].items[itemIdx];
+        const prev = Number(item.cantidad) || 0;
+        item.cantidad = String(prev + qty);
+        saveStock(cats);
+        addStockLogEntry('Ingreso', item.nombre, qty, '');
+        showToast(`+${qty} ${qty === 1 ? 'unidad' : 'unidades'} agregada${qty !== 1 ? 's' : ''}`, 'success');
+        closeModal('modal-stock-sumar');
+        renderStock();
+        _keepOpen(_stockMovCatId);
+      }
+
+      function openRetirar(catId, itemId) {
+        _stockMovCatId  = catId;
+        _stockMovItemId = itemId;
+        const cats = loadStock();
+        const cat  = cats.find(c => c.id === catId);
+        const item = cat?.items.find(i => i.id === itemId);
+        if (!item) return;
+        document.getElementById('retirar-item-info').textContent = item.nombre;
+        document.getElementById('retirar-cantidad').value = '';
+        const sel = document.getElementById('retirar-empleado');
+        sel.innerHTML = '<option value="">— Seleccionar empleado —</option>' +
+          EMPLEADOS.map(e => `<option value="${e}">${e}</option>`).join('');
+        document.getElementById('modal-stock-retirar').classList.add('open');
+        setTimeout(() => document.getElementById('retirar-cantidad').focus(), 100);
+      }
+
+      function confirmRetirar() {
+        const qty      = parseInt(document.getElementById('retirar-cantidad').value, 10);
+        const empleado = document.getElementById('retirar-empleado').value;
+        if (!qty || qty < 1)  return showToast('Ingresá una cantidad válida', 'error');
+        if (!empleado)        return showToast('Seleccioná un empleado', 'error');
+        const cats = loadStock();
+        const catIdx  = cats.findIndex(c => c.id === _stockMovCatId);
+        const itemIdx = cats[catIdx]?.items.findIndex(i => i.id === _stockMovItemId);
+        if (catIdx < 0 || itemIdx < 0) return;
+        const item = cats[catIdx].items[itemIdx];
+        const prev = Number(item.cantidad) || 0;
+        const newQty = Math.max(0, prev - qty);
+        item.cantidad = String(newQty);
+        saveStock(cats);
+        addStockLogEntry('Retiro', item.nombre, qty, empleado);
+        showToast(`-${qty} ${qty === 1 ? 'unidad retirada' : 'unidades retiradas'} por ${empleado}`, 'success');
+        closeModal('modal-stock-retirar');
+        renderStock();
+        _keepOpen(_stockMovCatId);
+      }
+
+      function _keepOpen(catId) {
+        setTimeout(() => {
+          const items = document.getElementById(`stock-items-${catId}`);
+          const chev  = document.getElementById(`stock-chev-${catId}`);
+          if (items && !items.classList.contains('open')) { items.classList.add('open'); chev && chev.classList.add('open'); }
+        }, 50);
+      }
+
+      // ── Historial de movimientos ───────────────────────────────────────────────
+      function openStockLog() {
+        const log = loadStockLog();
+        const body = document.getElementById('stock-log-body');
+        if (!log.length) {
+          body.innerHTML = '<div class="empty-state"><i class="ti ti-history"></i><div>Sin movimientos registrados</div></div>';
+        } else {
+          body.innerHTML = `<div class="table-wrap"><table class="stock-log-table">
+            <thead><tr><th>TIPO</th><th>FECHA</th><th>HORA</th><th>ÍTEM</th><th>CANTIDAD</th><th>EMPLEADO</th></tr></thead>
+            <tbody>
+              ${log.map(e => `<tr>
+                <td class="${e.tipo === 'Ingreso' ? 'stock-log-ingreso' : 'stock-log-retiro'}">${e.tipo === 'Ingreso' ? '▲ INGRESO' : '▼ RETIRO'}</td>
+                <td class="mono">${e.fecha}</td>
+                <td class="mono">${e.hora}</td>
+                <td style="text-transform:uppercase;font-weight:500">${e.item}</td>
+                <td class="mono">${fmtQty(e.cantidad)}</td>
+                <td>${e.empleado || '—'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table></div>`;
+        }
+        document.getElementById('modal-stock-log').classList.add('open');
+      }
+
+      function clearStockLog() {
+        if (!confirm('¿Borrar todo el historial de movimientos?')) return;
+        saveStockLog([]);
+        showToast('Historial borrado', 'success');
+        openStockLog();
       }
 
       // ── CALENDARIO (localStorage) ──────────────────────────────────────────────
