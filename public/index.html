@@ -992,7 +992,16 @@
         }
       }
       /* Centrar el bloque del calendario dentro de la página */
+      #page-calendario {
+        align-items: center;
+      }
+      #page-calendario > .page-header {
+        width: 100%;
+        max-width: 980px;
+      }
       #cal-layout {
+        display: grid;
+        grid-template-columns: 1fr 300px;
         justify-content: center;
         max-width: 980px;
         margin: 0 auto;
@@ -1011,6 +1020,106 @@
         color: var(--muted);
         font-family: var(--mono);
         font-size: 12px;
+      }
+
+      /* ── STOCK ── */
+      .stock-categoria {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        overflow: hidden;
+      }
+      .stock-cat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.15s;
+        border-left: 3px solid var(--accent);
+      }
+      .stock-cat-header:hover {
+        background: var(--surface2);
+      }
+      .stock-cat-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .stock-cat-name {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .stock-cat-count {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--muted);
+      }
+      .stock-cat-chevron {
+        transition: transform 0.2s;
+        color: var(--muted);
+        font-size: 16px;
+      }
+      .stock-cat-chevron.open {
+        transform: rotate(90deg);
+      }
+      .stock-items {
+        display: none;
+        padding: 0 0 8px 0;
+        border-top: 1px solid var(--border);
+      }
+      .stock-items.open {
+        display: block;
+      }
+      .stock-item-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 16px 8px 32px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+      }
+      .stock-item-row:last-child {
+        border-bottom: none;
+      }
+      .stock-item-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+      }
+      .stock-item-name {
+        flex: 1;
+        min-width: 0;
+      }
+      .stock-item-qty {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--accent);
+        white-space: nowrap;
+      }
+      .stock-item-notas {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 160px;
+      }
+      .stock-add-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px 4px 32px;
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+        transition: color 0.15s;
+      }
+      .stock-add-item:hover {
+        color: var(--accent);
       }
     </style>
   </head>
@@ -1060,6 +1169,10 @@
         <div class="nav-section">AGENDA</div>
         <div class="nav-item" data-page="calendario" onclick="goPage('calendario')">
           <i class="ti ti-calendar"></i> Calendario
+        </div>
+        <div class="nav-section">TALLER</div>
+        <div class="nav-item" data-page="stock" onclick="goPage('stock')">
+          <i class="ti ti-package"></i> Stock de materiales
         </div>
       </nav>
       <div class="mobile-overlay" id="mobile-overlay"></div>
@@ -1312,6 +1425,20 @@
             </div>
           </div>
         </div>
+        <div class="page" id="page-stock">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Stock de materiales</div>
+              <div class="page-sub">Inventario por categoría</div>
+            </div>
+            <button class="btn btn-primary" onclick="openModalStockCategoria()">
+              <i class="ti ti-plus"></i> Nueva categoría
+            </button>
+          </div>
+          <div id="stock-list" style="display:flex;flex-direction:column;gap:10px">
+            <div class="loading">Cargando...</div>
+          </div>
+        </div>
       </main>
     </div>
 
@@ -1490,9 +1617,13 @@
             </select>
           </div>
           <div id="nf-tipo-hint" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:-8px;display:none"></div>
-          <div class="fg">
+          <!-- Título solo se muestra para alertas; para otros tipos se autogenera -->
+          <div class="fg" id="nf-titulo-wrap">
             <label>TÍTULO DE LA NOVEDAD *</label>
             <input id="nf-titulo" placeholder="Ej: Llamamos a Federación Patronal" />
+          </div>
+          <div id="nf-titulo-auto" style="display:none;font-size:11px;color:var(--muted);font-family:var(--mono);padding:6px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">
+            <i class="ti ti-tag" style="font-size:11px"></i> Título automático: <span id="nf-titulo-preview" style="color:var(--accent)"></span>
           </div>
           <div class="fg">
             <label>DESCRIPCIÓN</label>
@@ -1502,11 +1633,15 @@
               placeholder="Detalle adicional (opcional)..."
             ></textarea>
           </div>
+          <!-- Recordatorio para todos los tipos -->
+          <div class="fg" id="nf-recordatorio-wrap">
+            <label>⏰ RECORDATORIO — ¿CUÁNDO QUERÉS QUE SALTE?</label>
+            <input id="nf-recordatorio-fecha" type="date" />
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Opcional. Si dejás vacío no se agenda recordatorio.</div>
+          </div>
           <div id="nf-alerta-opciones" style="display:none">
-            <div class="fg">
-              <label>⏰ MOSTRAR ALERTA EN EL DASHBOARD EN (días)</label>
-              <input id="nf-alerta-dias" type="number" min="0" max="365" value="0" placeholder="0 = inmediato" />
-              <div style="font-size:11px;color:var(--muted);margin-top:4px">0 días = aparece ya en el dashboard. Podés poner 3, 7, 15... para que aparezca más adelante.</div>
+            <div style="font-size:11px;color:var(--red);font-family:var(--mono);padding:6px 10px;background:var(--red-dim);border-radius:6px;border:1px solid rgba(226,75,74,0.25)">
+              🔴 Esta novedad aparecerá siempre en el Dashboard como alerta activa, incluso si aún no llegó la fecha del recordatorio.
             </div>
           </div>
         </div>
@@ -1565,6 +1700,58 @@
       </div>
     </div>
 
+    <!-- Modal nueva categoría stock -->
+    <div class="overlay" id="modal-stock-cat" onclick="overlayClose(event, 'modal-stock-cat')">
+      <div class="modal modal-sm">
+        <div class="modal-head">
+          <div class="modal-title" id="modal-stock-cat-title">Nueva categoría</div>
+          <button class="icon-btn" onclick="closeModal('modal-stock-cat')"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="fg">
+            <label>NOMBRE DE LA CATEGORÍA *</label>
+            <input id="scat-nombre" placeholder="Ej: Lijas, Aceites, Pinturas..." />
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-stock-cat')">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveStockCategoria()"><i class="ti ti-device-floppy"></i> Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal agregar ítem stock -->
+    <div class="overlay" id="modal-stock-item" onclick="overlayClose(event, 'modal-stock-item')">
+      <div class="modal modal-sm">
+        <div class="modal-head">
+          <div class="modal-title" id="modal-stock-item-title">Agregar ítem</div>
+          <button class="icon-btn" onclick="closeModal('modal-stock-item')"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="fg">
+            <label>NOMBRE / DESCRIPCIÓN *</label>
+            <input id="sitem-nombre" placeholder="Ej: Lija 120, Aceite 10W40..." />
+          </div>
+          <div class="fg">
+            <label>CANTIDAD</label>
+            <input id="sitem-cantidad" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="fg">
+            <label>UNIDAD (opcional)</label>
+            <input id="sitem-unidad" placeholder="unidades, litros, kg, packs..." />
+          </div>
+          <div class="fg">
+            <label>NOTAS (opcional)</label>
+            <input id="sitem-notas" placeholder="Proveedor, código, etc." />
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-stock-item')">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveStockItem()"><i class="ti ti-device-floppy"></i> Guardar</button>
+        </div>
+      </div>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script>
@@ -1587,7 +1774,10 @@
           const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
           throw new Error(err.error || 'Error en el servidor');
         }
-        return res.json();
+        // Some endpoints (like DELETE) return 204 with no body
+        const text = await res.text();
+        if (!text) return {};
+        try { return JSON.parse(text); } catch { return {}; }
       }
 
       // ── NAVEGACIÓN ─────────────────────────────────────────────────────────────
@@ -1621,6 +1811,7 @@
         else if (name === 'seguimiento') renderSeguimiento();
         else if (name === 'entrega') renderEntrega();
         else if (name === 'calendario') renderCalendario();
+        else if (name === 'stock') renderStock();
       }
       function refreshAll() {
         renderPage(currentPage);
@@ -1990,7 +2181,7 @@
     </div>`;
         document.getElementById('det-nov-btn').onclick = () => {
           closeModal('modal-detalle');
-          openModalNov();
+          openModalNov(v.patente);
         };
         document.getElementById('modal-detalle').classList.add('open');
       }
@@ -2132,46 +2323,67 @@
       }
 
       // ── MODAL NOVEDAD ──────────────────────────────────────────────────────────
-      const novHints = {
-        seguimiento: '⏰ Se creará un recordatorio automático en 2 días hábiles.',
-        alerta: '🔴 Esta novedad aparecerá en el Dashboard como alerta activa. Podés elegir en cuántos días.',
-        info: '',
-        ok: '',
-      };
+      // Patente actual del vehículo en detalle (para título automático)
+      let _novPatente = '';
+
       function updateNovPlaceholder() {
         const tipo = document.getElementById('nf-tipo').value;
         const hint = document.getElementById('nf-tipo-hint');
-        const msg = novHints[tipo] || '';
-        hint.textContent = msg;
-        hint.style.display = msg ? 'block' : 'none';
+        hint.style.display = 'none';
         const alertaOpts = document.getElementById('nf-alerta-opciones');
-        alertaOpts.style.display = tipo === 'alerta' ? 'block' : 'none';
+        const tituloWrap = document.getElementById('nf-titulo-wrap');
+        const tituloAuto = document.getElementById('nf-titulo-auto');
+        const tituloPreview = document.getElementById('nf-titulo-preview');
+
+        if (tipo === 'alerta') {
+          // Alerta: pedir título manualmente
+          tituloWrap.style.display = '';
+          tituloAuto.style.display = 'none';
+          alertaOpts.style.display = 'block';
+        } else {
+          // Info, seguimiento, ok: título automático
+          const tipoLabel = { info: 'NOVEDAD', seguimiento: 'SEGUIMIENTO', ok: 'RESUELTO' }[tipo] || 'NOVEDAD';
+          const autoTitle = _novPatente ? `${_novPatente} ${tipoLabel}` : tipoLabel;
+          tituloPreview.textContent = autoTitle;
+          tituloWrap.style.display = 'none';
+          tituloAuto.style.display = '';
+          alertaOpts.style.display = 'none';
+        }
       }
-      function openModalNov() {
+
+      function openModalNov(patente) {
+        _novPatente = patente || '';
         document.getElementById('nf-titulo').value = '';
         document.getElementById('nf-desc').value = '';
         document.getElementById('nf-tipo').value = 'info';
-        document.getElementById('nf-alerta-dias').value = '0';
+        document.getElementById('nf-recordatorio-fecha').value = '';
         updateNovPlaceholder();
         document.getElementById('modal-nov').classList.add('open');
-        setTimeout(() => document.getElementById('nf-titulo').focus(), 100);
+        setTimeout(() => {
+          const tipo = document.getElementById('nf-tipo').value;
+          if (tipo === 'alerta') document.getElementById('nf-titulo').focus();
+          else document.getElementById('nf-desc').focus();
+        }, 100);
       }
+
       async function saveNovedad() {
         const tipo = document.getElementById('nf-tipo').value;
-        const titulo = document.getElementById('nf-titulo').value.trim();
+        let titulo;
+        if (tipo === 'alerta') {
+          titulo = document.getElementById('nf-titulo').value.trim();
+          if (!titulo) return showToast('El título es obligatorio para alertas', 'error');
+        } else {
+          const tipoLabel = { info: 'NOVEDAD', seguimiento: 'SEGUIMIENTO', ok: 'RESUELTO' }[tipo] || 'NOVEDAD';
+          titulo = _novPatente ? `${_novPatente} ${tipoLabel}` : tipoLabel;
+        }
         const desc = document.getElementById('nf-desc').value.trim();
-        const alertaDias = parseInt(document.getElementById('nf-alerta-dias').value) || 0;
-        if (!titulo) return showToast('El título es obligatorio', 'error');
-        // Para alertas: calcular fecha de activación
-        let recordatorio_fecha = null;
-        if (tipo === 'seguimiento') {
-          // 2 días hábiles
+        const recordatorioInput = document.getElementById('nf-recordatorio-fecha').value;
+        let recordatorio_fecha = recordatorioInput || null;
+
+        // Para seguimiento: si no puso fecha manual, usar 2 días hábiles por defecto
+        if (tipo === 'seguimiento' && !recordatorio_fecha) {
           let d = new Date(); let added = 0;
           while (added < 2) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) added++; }
-          recordatorio_fecha = d.toISOString().split('T')[0];
-        } else if (tipo === 'alerta' && alertaDias > 0) {
-          let d = new Date();
-          d.setDate(d.getDate() + alertaDias);
           recordatorio_fecha = d.toISOString().split('T')[0];
         }
         try {
@@ -2179,11 +2391,12 @@
             method: 'POST',
             body: { vehiculo_id: detVehId, tipo, titulo, descripcion: desc, recordatorio_fecha },
           });
-          const msg = tipo === 'seguimiento'
-            ? 'Novedad guardada — recordatorio en 2 días hábiles'
-            : tipo === 'alerta' && alertaDias > 0
-              ? `Alerta guardada — aparecerá en ${alertaDias} día${alertaDias !== 1 ? 's' : ''}`
-              : 'Novedad guardada';
+          let msg = 'Novedad guardada';
+          if (recordatorio_fecha) {
+            const d = new Date(recordatorio_fecha + 'T12:00:00');
+            const label = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            msg = `Novedad guardada — recordatorio el ${label}`;
+          }
           showToast(msg, 'success');
           closeModal('modal-nov');
           updateNotifBadge();
@@ -2204,6 +2417,188 @@
         } catch (e) {
           showToast('Error al eliminar: ' + e.message, 'error');
         }
+      }
+
+      // ── STOCK (localStorage) ──────────────────────────────────────────────────
+      const STOCK_KEY = 'taller_stock_v1';
+      let _stockEditCatId = null;
+      let _stockAddItemCatId = null;
+      let _stockEditItemId = null;
+
+      function loadStock() {
+        try { return JSON.parse(localStorage.getItem(STOCK_KEY) || '[]'); } catch { return []; }
+      }
+      function saveStock(data) {
+        localStorage.setItem(STOCK_KEY, JSON.stringify(data));
+      }
+
+      function renderStock() {
+        const cats = loadStock();
+        const el = document.getElementById('stock-list');
+        if (!cats.length) {
+          el.innerHTML = '<div class="empty-state"><i class="ti ti-package"></i><div>Sin categorías</div><div style="font-size:11px;margin-top:4px">Agregá una categoría para empezar a registrar materiales.</div></div>';
+          return;
+        }
+        el.innerHTML = cats.map(cat => {
+          const items = cat.items || [];
+          return `
+          <div class="stock-categoria" id="stock-cat-${cat.id}">
+            <div class="stock-cat-header" onclick="toggleStockCat(${cat.id})">
+              <div class="stock-cat-header-left">
+                <i class="ti ti-chevron-right stock-cat-chevron" id="stock-chev-${cat.id}"></i>
+                <span class="stock-cat-name">${cat.nombre}</span>
+                <span class="stock-cat-count">${items.length} ítem${items.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+                <button class="icon-btn" style="width:26px;height:26px;font-size:12px" title="Editar categoría" onclick="openEditStockCat(${cat.id})"><i class="ti ti-edit"></i></button>
+                <button class="icon-btn danger" style="width:26px;height:26px;font-size:12px" title="Eliminar categoría" onclick="deleteStockCat(${cat.id})"><i class="ti ti-trash"></i></button>
+              </div>
+            </div>
+            <div class="stock-items" id="stock-items-${cat.id}">
+              ${items.map(item => `
+                <div class="stock-item-row">
+                  <div class="stock-item-dot"></div>
+                  <div class="stock-item-name">${item.nombre}</div>
+                  ${(item.cantidad !== null && item.cantidad !== '') ? `<span class="stock-item-qty">${item.cantidad}${item.unidad ? ' ' + item.unidad : ''}</span>` : ''}
+                  ${item.notas ? `<span class="stock-item-notas">${item.notas}</span>` : ''}
+                  <div style="display:flex;gap:4px;margin-left:auto">
+                    <button class="icon-btn" style="width:24px;height:24px;font-size:11px" title="Editar" onclick="openEditStockItem(${cat.id}, ${item.id})"><i class="ti ti-edit"></i></button>
+                    <button class="icon-btn danger" style="width:24px;height:24px;font-size:11px" title="Eliminar" onclick="deleteStockItem(${cat.id}, ${item.id})"><i class="ti ti-trash"></i></button>
+                  </div>
+                </div>
+              `).join('')}
+              <div class="stock-add-item" onclick="openModalStockItem(${cat.id})">
+                <i class="ti ti-plus" style="font-size:13px"></i> Agregar ítem
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      function toggleStockCat(id) {
+        const items = document.getElementById(`stock-items-${id}`);
+        const chev = document.getElementById(`stock-chev-${id}`);
+        items.classList.toggle('open');
+        chev.classList.toggle('open');
+      }
+
+      function openModalStockCategoria() {
+        _stockEditCatId = null;
+        document.getElementById('modal-stock-cat-title').textContent = 'Nueva categoría';
+        document.getElementById('scat-nombre').value = '';
+        document.getElementById('modal-stock-cat').classList.add('open');
+        setTimeout(() => document.getElementById('scat-nombre').focus(), 100);
+      }
+
+      function openEditStockCat(id) {
+        const cats = loadStock();
+        const cat = cats.find(c => c.id === id);
+        if (!cat) return;
+        _stockEditCatId = id;
+        document.getElementById('modal-stock-cat-title').textContent = 'Editar categoría';
+        document.getElementById('scat-nombre').value = cat.nombre;
+        document.getElementById('modal-stock-cat').classList.add('open');
+        setTimeout(() => document.getElementById('scat-nombre').focus(), 100);
+      }
+
+      function saveStockCategoria() {
+        const nombre = document.getElementById('scat-nombre').value.trim();
+        if (!nombre) return showToast('El nombre es obligatorio', 'error');
+        const cats = loadStock();
+        if (_stockEditCatId) {
+          const idx = cats.findIndex(c => c.id === _stockEditCatId);
+          if (idx >= 0) cats[idx].nombre = nombre;
+          showToast('Categoría actualizada', 'success');
+        } else {
+          cats.push({ id: Date.now(), nombre, items: [] });
+          showToast('Categoría creada', 'success');
+        }
+        saveStock(cats);
+        closeModal('modal-stock-cat');
+        renderStock();
+      }
+
+      function deleteStockCat(id) {
+        const cats = loadStock();
+        const cat = cats.find(c => c.id === id);
+        if (!cat) return;
+        if (!confirm(`¿Eliminar la categoría "${cat.nombre}" y todos sus ítems?`)) return;
+        saveStock(cats.filter(c => c.id !== id));
+        showToast('Categoría eliminada', 'success');
+        renderStock();
+      }
+
+      function openModalStockItem(catId) {
+        _stockAddItemCatId = catId;
+        _stockEditItemId = null;
+        document.getElementById('modal-stock-item-title').textContent = 'Agregar ítem';
+        document.getElementById('sitem-nombre').value = '';
+        document.getElementById('sitem-cantidad').value = '';
+        document.getElementById('sitem-unidad').value = '';
+        document.getElementById('sitem-notas').value = '';
+        document.getElementById('modal-stock-item').classList.add('open');
+        setTimeout(() => document.getElementById('sitem-nombre').focus(), 100);
+      }
+
+      function openEditStockItem(catId, itemId) {
+        const cats = loadStock();
+        const cat = cats.find(c => c.id === catId);
+        if (!cat) return;
+        const item = cat.items.find(i => i.id === itemId);
+        if (!item) return;
+        _stockAddItemCatId = catId;
+        _stockEditItemId = itemId;
+        document.getElementById('modal-stock-item-title').textContent = 'Editar ítem';
+        document.getElementById('sitem-nombre').value = item.nombre;
+        document.getElementById('sitem-cantidad').value = item.cantidad || '';
+        document.getElementById('sitem-unidad').value = item.unidad || '';
+        document.getElementById('sitem-notas').value = item.notas || '';
+        document.getElementById('modal-stock-item').classList.add('open');
+        setTimeout(() => document.getElementById('sitem-nombre').focus(), 100);
+      }
+
+      function saveStockItem() {
+        const nombre = document.getElementById('sitem-nombre').value.trim();
+        if (!nombre) return showToast('El nombre es obligatorio', 'error');
+        const cantidad = document.getElementById('sitem-cantidad').value;
+        const unidad = document.getElementById('sitem-unidad').value.trim();
+        const notas = document.getElementById('sitem-notas').value.trim();
+        const cats = loadStock();
+        const catIdx = cats.findIndex(c => c.id === _stockAddItemCatId);
+        if (catIdx < 0) return;
+        if (_stockEditItemId) {
+          const itemIdx = cats[catIdx].items.findIndex(i => i.id === _stockEditItemId);
+          if (itemIdx >= 0) cats[catIdx].items[itemIdx] = { ...cats[catIdx].items[itemIdx], nombre, cantidad, unidad, notas };
+          showToast('Ítem actualizado', 'success');
+        } else {
+          cats[catIdx].items.push({ id: Date.now(), nombre, cantidad, unidad, notas });
+          showToast('Ítem agregado', 'success');
+        }
+        saveStock(cats);
+        closeModal('modal-stock-item');
+        renderStock();
+        // Keep the category open
+        setTimeout(() => {
+          const items = document.getElementById(`stock-items-${_stockAddItemCatId}`);
+          const chev = document.getElementById(`stock-chev-${_stockAddItemCatId}`);
+          if (items && !items.classList.contains('open')) { items.classList.add('open'); chev && chev.classList.add('open'); }
+        }, 50);
+      }
+
+      function deleteStockItem(catId, itemId) {
+        if (!confirm('¿Eliminar este ítem?')) return;
+        const cats = loadStock();
+        const catIdx = cats.findIndex(c => c.id === catId);
+        if (catIdx < 0) return;
+        cats[catIdx].items = cats[catIdx].items.filter(i => i.id !== itemId);
+        saveStock(cats);
+        showToast('Ítem eliminado', 'success');
+        renderStock();
+        setTimeout(() => {
+          const items = document.getElementById(`stock-items-${catId}`);
+          const chev = document.getElementById(`stock-chev-${catId}`);
+          if (items && !items.classList.contains('open')) { items.classList.add('open'); chev && chev.classList.add('open'); }
+        }, 50);
       }
 
       // ── CALENDARIO (localStorage) ──────────────────────────────────────────────
