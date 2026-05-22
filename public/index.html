@@ -1981,7 +1981,10 @@
         else if (name === 'seguimiento') renderSeguimiento();
         else if (name === 'entrega') renderEntrega();
         else if (name === 'calendario') renderCalendario();
-        else if (name === 'stock') renderStock();
+        else if (name === 'stock') {
+          document.getElementById('stock-list').innerHTML = '<div class="loading">Sincronizando con el servidor...</div>';
+          fetchStockFromServer().then(renderStock);
+        }
       }
       function refreshAll() {
         renderPage(currentPage);
@@ -2660,31 +2663,32 @@
         }
       }
 
-      // ── STOCK (localStorage) ──────────────────────────────────────────────────
-      const STOCK_KEY    = 'taller_stock_v1';
-      const STOCK_LOG_KEY = 'taller_stock_log_v1';
-      let _stockEditCatId    = null;
-      let _stockAddItemCatId = null;
-      let _stockEditItemId   = null;
-      let _stockMovCatId     = null;
-      let _stockMovItemId    = null;
-      let _selectedItemColor = 'accent';
+      // ── STOCK (Supabase Sync) ──────────────────────────────────────────────────
+      let globalStock = [];
+      let globalStockLog = [];
 
-      const EMPLEADOS = ['JUAN', 'PEDRO', 'GUSTI', 'MARIO', 'LUCAS'];
-      const colorVarsStock = { accent:'#e8c547', blue:'#4a9ee8', green:'#4caf7d', red:'#e24b4a', orange:'#e8904a' };
+      async function fetchStockFromServer() {
+        try {
+          const data = await api('/api/stock');
+          globalStock = data.stock_json || [];
+          globalStockLog = data.log_json || [];
+        } catch (e) {
+          console.error("Error cargando stock:", e);
+        }
+      }
 
-      function loadStock() {
-        try { return JSON.parse(localStorage.getItem(STOCK_KEY) || '[]'); } catch { return []; }
+      function syncStockToServer() {
+        api('/api/stock', {
+          method: 'PUT',
+          body: { stock_json: globalStock, log_json: globalStockLog }
+        }).catch(e => showToast("Error guardando stock en la nube", "error"));
       }
-      function saveStock(data) {
-        localStorage.setItem(STOCK_KEY, JSON.stringify(data));
-      }
-      function loadStockLog() {
-        try { return JSON.parse(localStorage.getItem(STOCK_LOG_KEY) || '[]'); } catch { return []; }
-      }
-      function saveStockLog(log) {
-        localStorage.setItem(STOCK_LOG_KEY, JSON.stringify(log));
-      }
+
+      function loadStock() { return globalStock; }
+      function saveStock(data) { globalStock = data; syncStockToServer(); }
+      function loadStockLog() { return globalStockLog; }
+      function saveStockLog(data) { globalStockLog = data; syncStockToServer(); }
+
       function addStockLogEntry(tipo, itemNombre, cantidad, empleado) {
         const log = loadStockLog();
         const now = new Date();
@@ -2694,6 +2698,16 @@
         log.unshift({ id: Date.now(), tipo, fecha, hora: `${hh}:${mm}`, item: itemNombre, cantidad: Number(cantidad), empleado: empleado || '' });
         saveStockLog(log);
       }
+
+      let _stockEditCatId    = null;
+      let _stockAddItemCatId = null;
+      let _stockEditItemId   = null;
+      let _stockMovCatId     = null;
+      let _stockMovItemId    = null;
+      let _selectedItemColor = 'accent';
+
+      const EMPLEADOS = ['JUAN', 'PEDRO', 'GUSTI', 'MARIO', 'LUCAS'];
+      const colorVarsStock = { accent:'#e8c547', blue:'#4a9ee8', green:'#4caf7d', red:'#e24b4a', orange:'#e8904a' };
 
       function fmtQty(cantidad) {
         const n = Number(cantidad);
@@ -3189,10 +3203,14 @@
       }
 
       // ── INIT ───────────────────────────────────────────────────────────────────
-      renderDashboard();
-      updateNotifBadge();
-      // Polling de novedades cada 60 segundos
-      setInterval(updateNotifBadge, 60000);
+      async function initApp() {
+        await fetchStockFromServer();
+        renderDashboard();
+        updateNotifBadge();
+        setInterval(updateNotifBadge, 60000);
+      }
+      
+      initApp();
     </script>
   </body>
 </html>

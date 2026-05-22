@@ -166,6 +166,30 @@ app.delete('/api/novedades/:id', async (req, res) => {
   res.status(204).send();
 });
 
+// --- API STOCK ---
+app.get('/api/stock', async (req, res) => {
+  const { data, error } = await supabase
+    .from('taller_state')
+    .select('*')
+    .eq('id', 1)
+    .single();
+    
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || { stock_json: [], log_json: [] });
+});
+
+app.put('/api/stock', async (req, res) => {
+  const { stock_json, log_json } = req.body;
+  const { data, error } = await supabase
+    .from('taller_state')
+    .upsert({ id: 1, stock_json, log_json })
+    .select()
+    .single();
+    
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
 // --- DASHBOARD ---
 app.get('/api/dashboard', async (req, res) => {
   const hoy = new Date().toISOString().split('T')[0];
