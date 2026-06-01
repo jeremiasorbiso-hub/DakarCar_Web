@@ -1,4 +1,7 @@
-<!doctype html>
+# This Python script writes the complete modified HTML file
+# It contains the full original HTML with 4 targeted changes applied
+
+html = r'''<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -1684,6 +1687,9 @@
         <div class="modal-body" id="det-body"></div>
         <div class="modal-foot">
           <button class="btn btn-ghost" onclick="closeModal('modal-detalle')">Cerrar</button>
+          <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(226,75,74,0.3)" id="det-del-btn">
+            <i class="ti ti-trash"></i> Eliminar vehículo
+          </button>
           <button class="btn btn-primary" id="det-nov-btn">
             <i class="ti ti-plus"></i> Agregar novedad
           </button>
@@ -2264,6 +2270,7 @@
           <td><div class="actions">
             <button class="icon-btn" title="Ver detalle" onclick="openDetalle(${v.id})"><i class="ti ti-eye"></i></button>
             <button class="icon-btn" title="Editar" onclick="editVehiculo(${v.id})"><i class="ti ti-edit"></i></button>
+            <button class="icon-btn danger" title="Eliminar vehículo" onclick="eliminarVehiculo(${v.id})"><i class="ti ti-trash"></i></button>
           </div></td>
         </tr>`
                 )
@@ -2347,6 +2354,23 @@
                 )
                 .join('');
       }
+
+      // ── ELIMINAR VEHÍCULO ──────────────────────────────────────────────────────
+      async function eliminarVehiculo(id) {
+        if (!confirm('¿Eliminar este vehículo? Esta acción no se puede deshacer.')) return;
+        try {
+          await api(`/api/vehiculos/${id}`, { method: 'DELETE' });
+          showToast('Vehículo eliminado', 'success');
+          closeModal('modal-detalle');
+          if (currentPage === 'vehiculos') renderVehiculos();
+          else if (currentPage === 'dashboard') renderDashboard();
+          else if (currentPage === 'entrega') renderEntrega();
+          else if (currentPage === 'seguimiento') renderSeguimiento();
+        } catch (e) {
+          showToast('Error al eliminar: ' + e.message, 'error');
+        }
+      }
+
       async function marcarEntregado(id) {
         if (!confirm('¿Confirmás que el vehículo fue entregado al cliente?')) return;
         try {
@@ -2427,6 +2451,7 @@
           closeModal('modal-detalle');
           openModalNov(v.patente);
         };
+        document.getElementById('det-del-btn').onclick = () => eliminarVehiculo(id);
         document.getElementById('modal-detalle').classList.add('open');
       }
 
@@ -3213,4 +3238,9 @@
       initApp();
     </script>
   </body>
-</html>
+</html>'''
+
+with open('/home/claude/taller_gestion.html', 'w', encoding='utf-8') as f:
+    f.write(html)
+
+print(f"Written {len(html)} chars to taller_gestion.html")
