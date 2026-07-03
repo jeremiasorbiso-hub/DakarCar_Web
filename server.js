@@ -7,7 +7,16 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+const supabase = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+function requireSupabase(req, res, next) {
+  if (!supabase) {
+    return res.status(500).json({ error: 'Supabase no configurado. Configure SUPABASE_URL y SUPABASE_KEY.' });
+  }
+  next();
+}
 
 function diasDesde(fecha, estado = null) {
   if (!fecha) return 0;
@@ -20,6 +29,7 @@ function diasDesde(fecha, estado = null) {
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api', requireSupabase);
 
 // --- API CLIENTES ---
 app.get('/api/clientes', async (req, res) => {
@@ -260,6 +270,8 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`\n✅ Servidor DAKAR CAR corriendo en puerto ${PORT}\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n✅ Servidor DAKAR CAR corriendo en puerto ${PORT}\n`);
+  });
+}
