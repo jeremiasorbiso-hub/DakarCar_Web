@@ -264,7 +264,8 @@ app.get('/api/dashboard', async (req, res) => {
   });
 });
 
-module.exports = { app, diasDesde };
+module.exports = app;
+module.exports.diasDesde = diasDesde;
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
