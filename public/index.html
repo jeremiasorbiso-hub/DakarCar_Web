@@ -1623,6 +1623,11 @@
               <label>OBSERVACIONES</label
               ><textarea id="vf-obs" placeholder="Notas internas..."></textarea>
             </div>
+            <div class="fg full">
+              <label>RUTA DE DOCUMENTACIÓN</label
+              ><input id="vf-doc-path" placeholder="Ej: C:\\Siniestros\\ABC123" />
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Dirección local de la carpeta del siniestro. Se usará para abrir la documentación.</div>
+            </div>
           </div>
         </div>
         <div class="modal-foot">
@@ -1695,6 +1700,30 @@
           </button>
           <button class="btn btn-primary" id="det-nov-btn">
             <i class="ti ti-plus"></i> Agregar novedad
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="modal-doc" onclick="overlayClose(event, 'modal-doc')">
+      <div class="modal modal-sm">
+        <div class="modal-head">
+          <div class="modal-title">Documentación del siniestro</div>
+          <button class="icon-btn" onclick="closeModal('modal-doc')"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="fg full">
+            <label>Ruta guardada</label>
+            <div id="doc-folder-path" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);min-height:56px;word-break:break-all;color:var(--text)">—</div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4">
+            Esta ruta se usa para abrir la carpeta de documentación local del siniestro.
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('modal-doc')">Cerrar</button>
+          <button class="btn btn-primary" id="doc-open-btn" onclick="abrirDocumentacion()">
+            <i class="ti ti-folder"></i> Abrir carpeta
           </button>
         </div>
       </div>
@@ -2035,6 +2064,9 @@
       function diasColor(d) {
         return d >= 15 ? 'var(--red)' : d >= 7 ? 'var(--orange)' : 'var(--text)';
       }
+      function mostrarDias(v) {
+        return v.estado === 'entregado' ? '' : `${v.dias}d`;
+      }
       function fmtFecha(dt) {
         if (!dt) return '—';
         const d = new Date(dt);
@@ -2161,7 +2193,7 @@
         <td>${v.modelo}</td>
         <td>${v.cliente_nombre || '—'}</td>
         <td>${estadoPill(v.estado)}</td>
-        <td style="color:${diasColor(v.dias)};font-weight:500;font-family:var(--mono)">${v.dias}d</td>
+        <td style="color:${diasColor(v.dias)};font-weight:500;font-family:var(--mono)">${mostrarDias(v)}</td>
       </tr>`
               )
               .join('') ||
@@ -2272,8 +2304,9 @@
           <td>${v.cliente_nombre || '—'}</td>
           <td style="font-size:12px;color:var(--muted)">${v.aseguradora || '—'}</td>
           <td>${estadoPill(v.estado)}</td>
-          <td style="color:${diasColor(v.dias)};font-weight:500;font-family:var(--mono)">${v.dias}d</td>
+          <td style="color:${diasColor(v.dias)};font-weight:500;font-family:var(--mono)">${mostrarDias(v)}</td>
           <td><div class="actions">
+            <button class="icon-btn" title="Documentación" onclick="openDocumentacion(${v.id}, ${JSON.stringify(v.ruta_documentacion || '')})"><i class="ti ti-folder"></i></button>
             <button class="icon-btn" title="Ver detalle" onclick="openDetalle(${v.id})"><i class="ti ti-eye"></i></button>
             <button class="icon-btn" title="Editar" onclick="editVehiculo(${v.id})"><i class="ti ti-edit"></i></button>
             <button class="icon-btn danger" title="Eliminar vehículo" onclick="eliminarVehiculo(${v.id})"><i class="ti ti-trash"></i></button>
@@ -2351,7 +2384,7 @@
           <td><div style="font-weight:500">${v.modelo}</div><div class="mono" style="font-size:11px;color:var(--muted)">${v.patente}</div></td>
           <td>${v.cliente_nombre || '—'}</td>
           <td><a href="tel:${v.cliente_telefono}" style="color:var(--blue)">${v.cliente_telefono || '—'}</a></td>
-          <td style="color:var(--green);font-weight:500;font-family:var(--mono)">${v.dias}d</td>
+          <td style="color:var(--green);font-weight:500;font-family:var(--mono)">${mostrarDias(v)}</td>
           <td>${v.en_taller === 'si' ? '<span class="pill pill-green">Sí</span>' : '<span class="pill pill-orange">No — coordinar</span>'}</td>
           <td>
             <button class="btn btn-green" onclick="marcarEntregado(${v.id})"><i class="ti ti-check"></i> Marcar entregado</button>
@@ -2418,7 +2451,7 @@
         <div class="detail-field-val">${v.aseguradora || '—'} &nbsp;·&nbsp; <span class="mono">${v.nro_siniestro || 'Particular'}</span></div>
       </div>
       
-      <div class="detail-field full"><div class="detail-field-label">ESTADO</div><div class="detail-field-val">${estadoPill(v.estado)} &nbsp; <span style="color:${diasColor(v.dias)};font-family:var(--mono);font-size:12px">${v.dias} días en el sistema</span></div></div>
+      <div class="detail-field full"><div class="detail-field-label">ESTADO</div><div class="detail-field-val">${estadoPill(v.estado)} &nbsp; <span style="color:${diasColor(v.dias)};font-family:var(--mono);font-size:12px">${v.estado === 'entregado' ? '' : v.dias + ' días en el sistema'}</span></div></div>
       ${v.trabajo ? `<div class="detail-field full"><div class="detail-field-label">TRABAJO</div><div class="detail-field-val">${v.trabajo}</div></div>` : ''}
       ${v.observaciones ? `<div class="detail-field full"><div class="detail-field-label">OBSERVACIONES</div><div class="detail-field-val">${v.observaciones}</div></div>` : ''}
     </div>
@@ -2478,6 +2511,7 @@
           'vf-siniestro',
           'vf-trabajo',
           'vf-obs',
+          'vf-doc-path',
         ].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.value = '';
@@ -2513,6 +2547,7 @@
         document.getElementById('vf-en-taller').value = v.en_taller || 'si';
         document.getElementById('vf-trabajo').value = v.trabajo || '';
         document.getElementById('vf-obs').value = v.observaciones || '';
+        document.getElementById('vf-doc-path').value = v.ruta_documentacion || '';
         document.getElementById('modal-veh').classList.add('open');
       }
       async function saveVehiculo() {
@@ -2531,6 +2566,7 @@
           en_taller: document.getElementById('vf-en-taller').value,
           trabajo: document.getElementById('vf-trabajo').value.trim(),
           observaciones: document.getElementById('vf-obs').value.trim(),
+          ruta_documentacion: document.getElementById('vf-doc-path').value.trim() || null,
         };
         if (!body.patente || !body.modelo)
           return showToast('Patente y modelo son obligatorios', 'error');
@@ -2548,6 +2584,21 @@
           showToast(e.message, 'error');
         }
       }
+
+        let currentDocPath = '';
+
+        function openDocumentacion(id, path) {
+          currentDocPath = path || '';
+          const pathEl = document.getElementById('doc-folder-path');
+          pathEl.textContent = currentDocPath || 'No se ha guardado ninguna ruta para este vehículo';
+          document.getElementById('doc-open-btn').disabled = !currentDocPath;
+          document.getElementById('modal-doc').classList.add('open');
+        }
+
+        function abrirDocumentacion() {
+          if (!currentDocPath) return;
+          window.open(`file://${currentDocPath}`, '_blank');
+        }
 
       // ── MODAL CLIENTE ──────────────────────────────────────────────────────────
       function openModalCliente() {
