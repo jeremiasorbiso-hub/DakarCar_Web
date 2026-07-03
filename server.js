@@ -9,16 +9,17 @@ const PORT = process.env.PORT || 3000;
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-function diasDesde(fecha) {
+function diasDesde(fecha, estado = null) {
   if (!fecha) return 0;
+  if (estado === 'entregado') return 0;
   const hoy = new Date();
   const f = new Date(fecha);
   return Math.floor((hoy - f) / (1000 * 60 * 60 * 24));
 }
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --- API CLIENTES ---
 app.get('/api/clientes', async (req, res) => {
@@ -65,7 +66,7 @@ app.get('/api/vehiculos', async (req, res) => {
     ...v,
     cliente_nombre: v.clientes?.nombre,
     cliente_telefono: v.clientes?.telefono,
-    dias: diasDesde(v.fecha_ingreso)
+    dias: diasDesde(v.fecha_ingreso, v.estado)
   }));
   res.json(result);
 });
@@ -87,7 +88,7 @@ app.get('/api/vehiculos/:id', async (req, res) => {
     cliente_nombre: vehiculo.clientes?.nombre,
     cliente_telefono: vehiculo.clientes?.telefono,
     cliente_email: vehiculo.clientes?.email,
-    dias: diasDesde(vehiculo.fecha_ingreso),
+    dias: diasDesde(vehiculo.fecha_ingreso, vehiculo.estado),
     novedades: novedades || []
   });
 });
@@ -248,10 +249,12 @@ app.get('/api/dashboard', async (req, res) => {
     recientes: (recientes.data || []).map(v => ({
       ...v,
       cliente_nombre: v.clientes?.nombre,
-      dias: diasDesde(v.fecha_ingreso)
+      dias: diasDesde(v.fecha_ingreso, v.estado)
     }))
   });
 });
+
+module.exports = { app, diasDesde };
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

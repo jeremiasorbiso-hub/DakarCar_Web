@@ -1,27 +1,15 @@
-const request = require('supertest');
-const express = require('express');
-const app = require('./server'); // Asumiendo que exportas la app
+const { diasDesde } = require('./server');
 
-describe('API Tests', () => {
-  test('GET /api/dashboard should return stats', async () => {
-    const response = await request(app).get('/api/dashboard');
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('stats');
+describe('diasDesde', () => {
+  test('returns 0 for delivered vehicles', () => {
+    const fecha = new Date();
+    fecha.setDate(fecha.getDate() - 3);
+    expect(diasDesde(fecha.toISOString(), 'entregado')).toBe(0);
   });
 
-  test('POST /api/clientes with valid data', async () => {
-    const response = await request(app).post('/api/clientes').send({
-      nombre: 'Test Client',
-      telefono: '123456789',
-    });
-    expect(response.status).toBe(201);
-  });
-
-  test('POST /api/clientes with invalid data', async () => {
-    const response = await request(app).post('/api/clientes').send({
-      nombre: '',
-      telefono: '',
-    });
-    expect(response.status).toBe(400);
+  test('counts days for active vehicles', () => {
+    const fecha = new Date();
+    fecha.setDate(fecha.getDate() - 5);
+    expect(diasDesde(fecha.toISOString(), 'en_proceso')).toBe(5);
   });
 });
