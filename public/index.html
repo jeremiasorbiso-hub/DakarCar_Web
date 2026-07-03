@@ -1722,6 +1722,9 @@
         </div>
         <div class="modal-foot">
           <button class="btn btn-ghost" onclick="closeModal('modal-doc')">Cerrar</button>
+          <button class="btn btn-ghost" id="doc-copy-btn" onclick="copiarRuta()">
+            <i class="ti ti-clipboard"></i> Copiar ruta
+          </button>
           <button class="btn btn-primary" id="doc-open-btn" onclick="abrirDocumentacion()">
             <i class="ti ti-folder"></i> Abrir carpeta
           </button>
@@ -2592,12 +2595,45 @@
           const pathEl = document.getElementById('doc-folder-path');
           pathEl.textContent = currentDocPath || 'No se ha guardado ninguna ruta para este vehículo';
           document.getElementById('doc-open-btn').disabled = !currentDocPath;
+          const copyBtn = document.getElementById('doc-copy-btn');
+          if (copyBtn) copyBtn.disabled = !currentDocPath;
           document.getElementById('modal-doc').classList.add('open');
         }
 
         function abrirDocumentacion() {
           if (!currentDocPath) return;
-          window.open(`file://${currentDocPath}`, '_blank');
+          // Normalize Windows backslashes to forward slashes for file:// URL
+          try {
+            let normalized = currentDocPath.replace(/\\\\/g, '/');
+            // Ensure it starts with a slash after file://
+            if (!normalized.startsWith('/')) {
+              // For Windows paths like C:/...
+              normalized = '/' + normalized;
+            }
+            const url = 'file://' + normalized;
+            const newWin = window.open(url, '_blank');
+            // Some browsers block file:// navigation or popups; fallback to copying
+            if (!newWin) {
+              navigator.clipboard.writeText(currentDocPath).then(() => {
+                showToast('No se pudo abrir la carpeta. Ruta copiada al portapapeles.', 'info');
+              }).catch(() => {
+                showToast('No se pudo abrir la carpeta ni copiar la ruta automáticamente.', 'error');
+              });
+            }
+          } catch (e) {
+            navigator.clipboard.writeText(currentDocPath).then(() => {
+              showToast('Ruta copiada al portapapeles', 'info');
+            }).catch(() => showToast('Error: ' + e.message, 'error'));
+          }
+        }
+
+        function copiarRuta() {
+          if (!currentDocPath) return showToast('No hay ruta para copiar', 'error');
+          navigator.clipboard.writeText(currentDocPath).then(() => {
+            showToast('Ruta copiada al portapapeles', 'success');
+          }).catch(() => {
+            showToast('No se pudo copiar la ruta automáticamente. Copiala manualmente: ' + currentDocPath, 'error');
+          });
         }
 
       // ── MODAL CLIENTE ──────────────────────────────────────────────────────────
