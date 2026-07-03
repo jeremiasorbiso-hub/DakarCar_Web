@@ -2589,8 +2589,10 @@
       }
 
         let currentDocPath = '';
+        let currentVehicleId = null;
 
         function openDocumentacion(id, path) {
+          currentVehicleId = id || null;
           currentDocPath = path || '';
           const pathEl = document.getElementById('doc-folder-path');
           pathEl.textContent = currentDocPath || 'No se ha guardado ninguna ruta para este vehículo';
@@ -2599,31 +2601,39 @@
           if (copyBtn) copyBtn.disabled = !currentDocPath;
           document.getElementById('modal-doc').classList.add('open');
         }
-
-        function abrirDocumentacion() {
+        async function abrirDocumentacion() {
           if (!currentDocPath) return;
-          // Normalize Windows backslashes to forward slashes for file:// URL
+          // Primero, intentamos pedir al servidor que abra la carpeta localmente
+          if (currentVehicleId) {
+            try {
+              const resp = await fetch('/api/abrir-documentacion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: currentVehicleId })
+              });
+                if (resp.ok) {
+                  showToast('Explorador abierto desde el servidor', 'success');
+                  return;
+                }
+                // si falla, seguimos al fallback
+            } catch (e) {
+              // ignore and fallback
+            }
+          }
+
+          // Fallback: intentar file:// y/o copiar ruta
           try {
             let normalized = currentDocPath.replace(/\\\\/g, '/');
-            // Ensure it starts with a slash after file://
-            if (!normalized.startsWith('/')) {
-              // For Windows paths like C:/...
-              normalized = '/' + normalized;
-            }
+            if (!normalized.startsWith('/')) normalized = '/' + normalized;
             const url = 'file://' + normalized;
             const newWin = window.open(url, '_blank');
-            // Some browsers block file:// navigation or popups; fallback to copying
             if (!newWin) {
-              navigator.clipboard.writeText(currentDocPath).then(() => {
-                showToast('No se pudo abrir la carpeta. Ruta copiada al portapapeles.', 'info');
-              }).catch(() => {
-                showToast('No se pudo abrir la carpeta ni copiar la ruta automáticamente.', 'error');
-              });
+              await navigator.clipboard.writeText(currentDocPath);
+              showToast('No se pudo abrir la carpeta. Ruta copiada al portapapeles.', 'info');
             }
           } catch (e) {
-            navigator.clipboard.writeText(currentDocPath).then(() => {
-              showToast('Ruta copiada al portapapeles', 'info');
-            }).catch(() => showToast('Error: ' + e.message, 'error'));
+            try { await navigator.clipboard.writeText(currentDocPath); showToast('Ruta copiada al portapapeles', 'info'); }
+            catch { showToast('No se pudo abrir la carpeta ni copiar la ruta automáticamente.', 'error'); }
           }
         }
 

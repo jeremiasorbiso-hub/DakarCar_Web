@@ -3,6 +3,8 @@ const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 const cors = require('cors');
+const { exec } = require('child_process');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -115,6 +117,29 @@ app.put('/api/vehiculos/:id', async (req, res) => {
   const { data, error } = await supabase.from('vehiculos').update(body).eq('id', req.params.id).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
+});
+
+// Endpoint local para abrir la carpeta de documentación del siniestro
+app.post('/api/abrir-documentacion', async (req, res) => {
+  // Seguridad: sólo habilitar en entornos locales explicitando la variable
+  if (!process.env.ENABLE_LOCAL_OPEN || process.env.ENABLE_LOCAL_OPEN !== 'true') {
+    return res.status(403).json({ error: 'Local open disabled. Set ENABLE_LOCAL_OPEN=true.' });
+  }
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ error: 'Falta id del vehículo' });
+  const { data: veh, error } = await supabase.from('vehiculos').select('ruta_documentacion').eq('id', id).single();
+  if (error || !veh) return res.status(404).json({ error: 'Vehículo no encontrado' });
+  const ruta = veh.ruta_documentacion;
+  if (!ruta) return res.status(400).json({ error: 'No hay ruta de documentación para este vehículo' });
+  if (!fs.existsSync(ruta)) return res.status(404).json({ error: 'Ruta no encontrada en el servidor' });
+  let cmd;
+  if (process.platform === 'win32') cmd = `start "" "${ruta}"`;
+  else if (process.platform === 'darwin') cmd = `open "${ruta}"`;
+  else cmd = `xdg-open "${ruta}"`;
+  exec(cmd, (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ ok: true });
+  });
 });
 
 // --- API NOVEDADES ---
