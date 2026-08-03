@@ -1379,7 +1379,7 @@
                   <tr>
                     <th>PATENTE</th>
                     <th>VEHÍCULO</th>
-                    <th>CLIENTE</th>
+                    <th>FECHA DE PAGO</th>
                     <th>ASEGURADORA</th>
                     <th>ESTADO</th>
                     <th>DÍAS</th>
@@ -1590,6 +1590,10 @@
             <div class="fg">
               <label>NRO. SINIESTRO / PÓLIZA</label
               ><input id="vf-siniestro" placeholder="SIN-2024-00123" />
+            </div>
+            <div class="fg">
+              <label>FECHA DE PAGO</label
+              ><input id="vf-fecha-pago" type="date" />
             </div>
             <div class="fg">
               <label>ESTADO</label>
@@ -2304,7 +2308,7 @@
             <div style="font-size:11px; color:var(--accent); margin-top:4px;">#${v.nro_siniestro || 'Particular'}</div>
           </td>
           <td>${v.modelo}</td>
-          <td>${v.cliente_nombre || '—'}</td>
+          <td>${v.fecha_pago ? new Date(v.fecha_pago + 'T00:00:00').toLocaleDateString('es-AR') : '<span style="color:var(--muted)">Sin registrar</span>'}</td>
           <td style="font-size:12px;color:var(--muted)">${v.aseguradora || '—'}</td>
           <td>${estadoPill(v.estado)}</td>
           <td style="color:${diasColor(v.dias)};font-weight:500;font-family:var(--mono)">${mostrarDias(v)}</td>
@@ -2512,6 +2516,7 @@
           'vf-km',
           'vf-aseguradora',
           'vf-siniestro',
+          'vf-fecha-pago',
           'vf-trabajo',
           'vf-obs',
           'vf-doc-path',
@@ -2546,6 +2551,7 @@
         document.getElementById('vf-cliente').value = v.cliente_id || '';
         document.getElementById('vf-aseguradora').value = v.aseguradora || '';
         document.getElementById('vf-siniestro').value = v.nro_siniestro || '';
+        document.getElementById('vf-fecha-pago').value = v.fecha_pago || '';
         document.getElementById('vf-estado').value = v.estado;
         document.getElementById('vf-en-taller').value = v.en_taller || 'si';
         document.getElementById('vf-trabajo').value = v.trabajo || '';
@@ -2565,6 +2571,7 @@
           cliente_id: document.getElementById('vf-cliente').value || null,
           aseguradora: document.getElementById('vf-aseguradora').value.trim(),
           nro_siniestro: document.getElementById('vf-siniestro').value.trim(),
+          fecha_pago: document.getElementById('vf-fecha-pago').value || null,
           estado: document.getElementById('vf-estado').value,
           en_taller: document.getElementById('vf-en-taller').value,
           trabajo: document.getElementById('vf-trabajo').value.trim(),
