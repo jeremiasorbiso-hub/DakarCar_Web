@@ -119,6 +119,13 @@ app.put('/api/vehiculos/:id', async (req, res) => {
   res.json(data);
 });
 
+// ✅ DELETE vehículo — endpoint que faltaba
+app.delete('/api/vehiculos/:id', async (req, res) => {
+  const { error } = await supabase.from('vehiculos').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).send();
+});
+
 // Endpoint local para abrir la carpeta de documentación del siniestro
 app.post('/api/abrir-documentacion', async (req, res) => {
   // Seguridad: sólo habilitar en entornos locales explicitando la variable
